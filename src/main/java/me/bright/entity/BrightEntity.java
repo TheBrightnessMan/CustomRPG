@@ -1,6 +1,7 @@
 package me.bright.entity;
 
 import me.bright.brightrpg.BrightRPG;
+import me.bright.damage.ConditionalDamage;
 import me.bright.damage.Damage;
 import me.bright.damage.DamageType;
 import me.bright.itemNSpell.main.BrightItem;
@@ -24,6 +25,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 
@@ -68,39 +72,54 @@ public class BrightEntity {
         return BrightItem.fromItemStack(equipment.getItemInMainHand());
     }
 
-    public Damage physicalHit(@NotNull BrightEntity target) {
+    public List<Damage> physicalHit(@NotNull BrightEntity target) {
+        final List<Damage> damages = new ArrayList<>();
+
         BrightItem weapon = getItemInMainHand();
-        long weaponDamage = (weapon == null) ? 0 : weapon.getAttribute(BrightItemAttribute.DAMAGE);
+        Damage baseDamage = Damage.noDamage;
+        List<ConditionalDamage> conditionalDamages = new ArrayList<>();
+        if (weapon != null) {
+            baseDamage = weapon.getBaseDamage();
+            conditionalDamages = weapon.getConditionalDamage();
+        }
+
         long strength = getStrength();
         long critChance = getCritChance();
         long critDamage = getCritDamage();
-        double amount = (weaponDamage + 5) * (1 + (double) strength / 100);
-        boolean crit = false;
 
-        if (critChance == 0) {
-            return target.takeDamage(new Damage(DamageType.PHYSICAL,
-                    (long) amount, this, false));
-        }
-
-        if (critChance == 100 || new Random().nextInt(1, 101) <= critChance) {
-            amount *= (1 + (double) critDamage / 100);
-            crit = true;
-        }
-
+        double amount = (baseDamage.amount() + 5) * (1 + (double) strength / 100);
         if (this instanceof BrightPlayer player)
             amount *= Math.pow(player.getPlayer().getAttackCooldown(), 3);
 
-        Damage real = target.takeDamage(
-                new Damage(DamageType.PHYSICAL, (long) amount, this, crit));
+        if (rollCrit(critChance))
+            damages.add(new Damage(DamageType.PHYSICAL,
+                    (long) (amount * (1 + (double) critDamage / 100)),
+                    this, true));
+        else
+            damages.add(new Damage(DamageType.PHYSICAL, (long) amount, this, false));
 
-        showDamage(target.getLivingEntity(), real);
+        for (ConditionalDamage conditionalDamage : conditionalDamages) {
+            var condition = conditionalDamage.condition();
+            Damage damage = conditionalDamage.damage();
+            if (condition.test(this, target)) damages.add(damage);
+        }
+
+        List<Damage> real = target.takeDamage(damages);
+        showDamages(target.getLivingEntity(), real);
         return real;
     }
 
-    public Damage spellHit(@NotNull BrightEntity target, @NotNull BrightSpell brightSpell) {
+    public List<Damage> spellHit(@NotNull BrightEntity target, @NotNull BrightSpell brightSpell) {
         long intelligence = getInt();
         long spellDamage = getEntityAttribute(BrightEntityAttribute.SPELL_DMG);
+        var mainHand = this.getItemInMainHand();
+        var conditionalDamages = (mainHand == null) ?
+                new ArrayList<ConditionalDamage>() :
+                mainHand.getConditionalDamage();
+
+        List<Damage> damages = new ArrayList<>();
         Damage baseDamage = brightSpell.getBaseDamage();
+
         Damage actual = new Damage(baseDamage.type(), baseDamage.amount(), this, baseDamage.critical());
         switch (actual.type()) {
             case PHYSICAL, MAGIC, TRUE -> {
@@ -108,62 +127,106 @@ public class BrightEntity {
                 actual = new Damage(actual.type(), (long) amount, this, actual.critical());
             }
         }
+        damages.add(actual);
+
+        for (var conditionalDamage : conditionalDamages) {
+            var condition = conditionalDamage.condition();
+            if (condition.test(this, target)) damages.add(conditionalDamage.damage());
+        }
+
         target.getLivingEntity().damage(0.01);
-        Damage real = target.takeDamage(actual);
-        showDamage(target.getLivingEntity(), real);
+        List<Damage> real = target.takeDamage(damages);
+        showDamages(target.getLivingEntity(), real);
         return real;
     }
 
-    public Damage takeDamage(@NotNull Damage damage) {
-        if (damage.dealer() == null) return Damage.noDamage;
-        BrightItem mainHand = damage.dealer().getItemInMainHand();
-        long currentHp = getEntityAttribute(BrightEntityAttribute.CURRENT_HP);
-        long maxHp = getEntityAttribute(BrightEntityAttribute.MAX_HP);
+    public List<Damage> takeDamage(@NotNull List<Damage> damages) {
+        if (damages.isEmpty()) return damages;
+        BrightEntity dealer = damages.getFirst().dealer();
+        if (dealer == null) return new ArrayList<>();
+        long currentHp = getEntityAttribute(BrightEntityAttribute.CURRENT_HP),
+                maxHp = getEntityAttribute(BrightEntityAttribute.MAX_HP);
+        double currentHpPercent = (double) currentHp / 100,
+                missingHpPercent = (double) (maxHp - currentHp) / 100,
+                maxHpPercent = (double) maxHp / 100;
 
         if (currentHp <= 0 || maxHp <= 0) {
             plugin.getLogger().log(Level.SEVERE,
                     "Current hp or max hp <= 0! How did we get here!");
-            return Damage.noDamage;
+            return new ArrayList<>();
         }
 
-        double resistance = 0L;
-        long flatPen = 0L;
-        long percentPen = 0L;
+        BrightItem weapon = damages.getFirst().dealer().getItemInMainHand();
+        long flatArmorPen = 0L, percentArmorPen = 0L, flatMagicPen = 0L, percentMagicPen = 0L;
+        if (weapon != null) {
+            flatArmorPen = weapon.getAttribute(BrightItemAttribute.FLAT_ARMOR_PEN);
+            percentArmorPen = weapon.getAttribute(BrightItemAttribute.PERCENT_ARMOR_PEN);
+            flatMagicPen = weapon.getAttribute(BrightItemAttribute.FLAT_MAGIC_PEN);
+            percentMagicPen = weapon.getAttribute(BrightItemAttribute.PERCENT_MAGIC_PEN);
+        }
 
-        switch (damage.type()) {
-            case PHYSICAL, CURRENT_HP_PHYSICAL, MISSING_HP_PHYSICAL, MAX_HP_PHYSICAL -> {
-                resistance = getArmor();
-                if (mainHand == null) break;
-                flatPen = mainHand.getAttribute(BrightItemAttribute.FLAT_ARMOR_PEN);
-                percentPen = mainHand.getAttribute(BrightItemAttribute.PERCENT_ARMOR_PEN);
+        double effectiveArmor = (getArmor() - flatArmorPen) * (1 - (double) percentArmorPen / 100),
+                effectiveMR = (getArmor() - flatMagicPen) * (1 - (double) percentMagicPen / 100),
+                physicalReduction = effectiveArmor / (effectiveArmor + Damage.getBalanceFactor()),
+                magicalReduction = effectiveMR / (effectiveMR + Damage.getBalanceFactor());
+        long universalReduction = getDamageReduction();
+
+        double rawPhysical = 0L,
+                rawMagic = 0L,
+                rawTrue = 0L;
+        boolean physicalCrit = false,
+                magicCrit = false,
+                trueCrit = false;
+        for (Damage damage : damages) {
+            switch (damage.type()) {
+                case PHYSICAL -> {
+                    rawPhysical += damage.amount();
+                    physicalCrit = physicalCrit || damage.critical();
+                }
+                case MAGIC -> {
+                    rawMagic += damage.amount();
+                    magicCrit = magicCrit || damage.critical();
+                }
+                case TRUE -> {
+                    rawTrue += damage.amount();
+                    trueCrit = trueCrit || damage.critical();
+                }
+
+                case CURRENT_HP_PHYSICAL -> rawPhysical += damage.amount() * currentHpPercent;
+                case CURRENT_HP_MAGIC -> rawMagic += damage.amount() * currentHpPercent;
+                case CURRENT_HP_TRUE -> rawTrue += damage.amount() * currentHpPercent;
+
+                case MISSING_HP_PHYSICAL -> rawPhysical += damage.amount() * missingHpPercent;
+                case MISSING_HP_MAGIC -> rawMagic += damage.amount() * missingHpPercent;
+                case MISSING_HP_TRUE -> rawTrue += damage.amount() * missingHpPercent;
+
+                case MAX_HP_PHYSICAL -> rawPhysical += damage.amount() * maxHpPercent;
+                case MAX_HP_MAGIC -> rawMagic += damage.amount() * maxHpPercent;
+                case MAX_HP_TRUE -> rawTrue += damage.amount() * maxHpPercent;
             }
-            case MAGIC, CURRENT_HP_MAGIC, MISSING_HP_MAGIC, MAX_HP_MAGIC -> {
-                resistance = getMagicResist();
-                if (mainHand == null) break;
-                flatPen = mainHand.getAttribute(BrightItemAttribute.FLAT_MAGIC_PEN);
-                percentPen = mainHand.getAttribute(BrightItemAttribute.PERCENT_MAGIC_PEN);
-            }
-        }
-        resistance *= (1 - (double) percentPen / 100);
-        resistance -= flatPen;
-        double resistanceDamageReduction = resistance / (resistance + Damage.getBalanceFactor());
-        double actualDmg = 0L;
-
-        switch (damage.type()) {
-            case PHYSICAL, MAGIC, TRUE -> actualDmg += damage.amount();
-            case CURRENT_HP_PHYSICAL, CURRENT_HP_MAGIC, CURRENT_HP_TRUE ->
-                    actualDmg += (double) (damage.amount() * currentHp) / 100;
-            case MISSING_HP_PHYSICAL, MISSING_HP_MAGIC, MISSING_HP_TRUE ->
-                    actualDmg += (double) (damage.amount() * (maxHp - currentHp)) / 100;
-            case MAX_HP_PHYSICAL, MAX_HP_MAGIC, MAX_HP_TRUE -> actualDmg += (double) (damage.amount() * maxHp) / 100;
         }
 
-        actualDmg *= (1 - resistanceDamageReduction / 100);
-        actualDmg *= (1 - (double) getDamageReduction() / 100);
+        rawPhysical *= (1 - physicalReduction) * (1 - (double) universalReduction / 100);
+        rawMagic *= (1 - magicalReduction) * (1 - (double) universalReduction / 100);
 
-        long finalDamage = (long) Math.max(0, actualDmg);
-        setEntityAttribute(BrightEntityAttribute.CURRENT_HP, Math.max(currentHp - finalDamage, 0));
-        return new Damage(damage.type(), finalDamage, damage.dealer(), damage.critical());
+        long finalPhysical = (long) Math.max(0, rawPhysical),
+                finalMagic = (long) Math.max(0, rawMagic),
+                finalTrue = (long) Math.max(0, rawTrue),
+                total = finalPhysical + finalMagic + finalTrue;
+
+        setEntityAttribute(BrightEntityAttribute.CURRENT_HP, Math.max(currentHp - total, 0));
+        return Arrays.asList(
+                new Damage(DamageType.PHYSICAL, finalPhysical, dealer, physicalCrit),
+                new Damage(DamageType.MAGIC, finalMagic, dealer, magicCrit),
+                new Damage(DamageType.TRUE, finalTrue, dealer, trueCrit)
+        );
+    }
+
+    private void showDamages(@NotNull LivingEntity target,
+                             @NotNull List<Damage> damages) {
+        for (Damage damage : damages) {
+            if (damage.amount() > 0) showDamage(target, damage);
+        }
     }
 
     private void showDamage(@NotNull LivingEntity target,
@@ -418,6 +481,12 @@ public class BrightEntity {
         }
         attributeInstance.addModifier(modifier);
         return attributeInstance.getValue();
+    }
+
+    private boolean rollCrit(long critChance) {
+        if (critChance <= 0) return false;
+        if (critChance >= 100) return true;
+        return new Random().nextInt(1, 101) <= critChance;
     }
 
     @Override

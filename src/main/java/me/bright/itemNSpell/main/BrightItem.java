@@ -1,9 +1,9 @@
 package me.bright.itemNSpell.main;
 
 import me.bright.brightrpg.BrightRPG;
+import me.bright.damage.ConditionalDamage;
 import me.bright.damage.Damage;
 import me.bright.damage.DamageType;
-import me.bright.entity.BrightEntity;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -15,78 +15,102 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Map;
 
 public class BrightItem {
+
+    private final BrightRPG plugin;
 
     private final ItemStack itemStack;
     private final ItemMeta itemMeta;
     private final PersistentDataContainer nbt;
-    private final BrightRPG plugin;
-    private final String name;
-    private List<String> additionalModifierDescription = new ArrayList<>();
-    private List<String> spellDescription = new ArrayList<>();
-    private Rarity rarity = Rarity.COMMON;
-    private final long id;
-    private Predicate<BrightEntity> additionalDamagePredicate = brightEntity -> false;
-    private Damage additionalDamage = new Damage(DamageType.TRUE, 0, null, false);
 
-    protected BrightItem(long id, @NotNull Material material, @NotNull String name) {
+    private final String name;
+    private static final String KEY_ATTRIBUTE = "KEY", DEFAULT_KEY = "null";
+    private final Map<BrightItemAttribute, Long> attributes = new HashMap<>();
+    private Rarity rarity = Rarity.COMMON;
+    private BrightSpell spell = null;
+
+    private Damage baseDamage = new Damage(DamageType.PHYSICAL, 0, null, false);
+    private final List<ConditionalDamage> conditionalDamages = new ArrayList<>();
+    private final List<String> additionalModifierDescription = new ArrayList<>();
+
+    protected BrightItem(String key, @NotNull Material material, @NotNull String name) {
         this.itemStack = new ItemStack(material);
         this.itemMeta = itemStack.getItemMeta();
         assert itemMeta != null;
         this.nbt = itemMeta.getPersistentDataContainer();
         this.plugin = BrightRPG.getPlugin();
         this.name = name;
-        this.id = id;
         itemMeta.setDisplayName(name);
         itemStack.setItemMeta(itemMeta);
-        setAttribute(BrightItemAttribute.ID, id);
+        nbt.set(new NamespacedKey(plugin, KEY_ATTRIBUTE), PersistentDataType.STRING, key);
     }
 
     public static @Nullable BrightItem fromItemStack(@Nullable ItemStack itemStack) {
         if (itemStack == null) return null;
         ItemMeta itemMeta = itemStack.getItemMeta();
-        assert itemMeta != null;
+        if (itemMeta == null) return null;
         PersistentDataContainer nbt = itemMeta.getPersistentDataContainer();
-        long id = nbt.getOrDefault(new NamespacedKey(BrightRPG.getPlugin(), BrightItemAttribute.ID.key),
-                PersistentDataType.LONG, BrightItemAttribute.ID.defaultValue);
-        if (id == BrightItemAttribute.ID.defaultValue) {
-            return new BrightItem(-1, itemStack.getType(), itemMeta.getDisplayName());
+        String givenKey = nbt.getOrDefault(new NamespacedKey(BrightRPG.getPlugin(), KEY_ATTRIBUTE),
+                PersistentDataType.STRING, DEFAULT_KEY);
+        if (givenKey.equals(DEFAULT_KEY)) {
+            return new BrightItem(DEFAULT_KEY, itemStack.getType(), itemMeta.getDisplayName());
         }
-        return BrightItemList.getItem(id);
+        return BrightItemList.getItem(givenKey);
     }
 
     public long getAttribute(@NotNull BrightItemAttribute attribute) {
-        if (nbt == null) return attribute.defaultValue;
-        return nbt.getOrDefault(new NamespacedKey(plugin, attribute.key),
-                PersistentDataType.LONG, attribute.defaultValue);
+        return attributes.getOrDefault(attribute, attribute.defaultValue);
     }
 
     public void setAttribute(@NotNull BrightItemAttribute attribute,
                              long value) {
-        nbt.set(new NamespacedKey(plugin, attribute.key),
-                PersistentDataType.LONG, value);
+        attributes.put(attribute, value);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    protected void setBaseDamage(@NotNull Damage baseDamage) {
+        this.baseDamage = baseDamage;
+    }
+
+    public @NotNull Damage getBaseDamage() {
+        return this.baseDamage;
+    }
+
+    protected void addConditionalDamage(@NotNull ConditionalDamage conditionalDamage,
+                                        @NotNull List<String> description) {
+        conditionalDamages.add(conditionalDamage);
+        additionalModifierDescription.addAll(description);
+    }
+
+    protected void clearConditionalDamage() {
+        conditionalDamages.clear();
+        additionalModifierDescription.clear();
+    }
+
+    public @NotNull List<ConditionalDamage> getConditionalDamage() {
+        return conditionalDamages;
     }
 
     public @Nullable ItemStack buildItem() {
         if (itemStack == null || itemMeta == null) return null;
         List<String> finalLore = buildAttributeLore();
-        if (!this.additionalModifierDescription.isEmpty()) {
+        if (!additionalModifierDescription.isEmpty()) {
             finalLore.add("");
-            finalLore.addAll(this.additionalModifierDescription);
+            finalLore.addAll(additionalModifierDescription);
         }
-        long spellId = getAttribute(BrightItemAttribute.SPELL);
-        if (spellId != BrightItemAttribute.SPELL.defaultValue) {
-            BrightSpell brightSpell = BrightSpellList.getSpell(spellId);
-            if (brightSpell != null) {
-                finalLore.add("");
-                finalLore.add(ChatColor.YELLOW + "Spell: " + brightSpell.getDisplayName() + " " +
-                        ChatColor.GOLD + ChatColor.BOLD + "RIGHT CLICK");
-                finalLore.addAll(this.spellDescription);
-                finalLore.addAll(brightSpell.buildAttributes());
-            }
+        if (spell != null) {
+            finalLore.add("");
+            finalLore.add(ChatColor.YELLOW + "Spell: " + spell.getDisplayName() + " " +
+                    ChatColor.GOLD + ChatColor.BOLD + "RIGHT CLICK");
+            finalLore.addAll(spell.getDescription());
+            finalLore.addAll(spell.buildAttributes());
         }
         finalLore.add("");
         finalLore.add(rarity.displayName);
@@ -95,23 +119,14 @@ public class BrightItem {
         return itemStack;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public @NotNull Rarity getRarity() {
-        return rarity;
-    }
-
-    public void setRarity(@NotNull Rarity rarity) {
-        this.rarity = rarity;
-    }
-
     public @NotNull List<String> buildAttributeLore() {
         final List<String> lore = new ArrayList<>();
+        if (baseDamage.amount() != 0) {
+            lore.add(ChatColor.GRAY + "Damage: " +
+                    ChatColor.RED + "+" + baseDamage.amount());
+        }
         final BrightItemAttribute[] attributes = BrightItemAttribute.values();
-        for (int i = 0; i < attributes.length - 1; i++) {
-            BrightItemAttribute attribute = attributes[i];
+        for (BrightItemAttribute attribute : attributes) {
             long value = getAttribute(attribute);
             if (value == attribute.defaultValue) continue;
             lore.add(ChatColor.GRAY + attribute.displayName + ": " +
@@ -120,42 +135,31 @@ public class BrightItem {
         return lore;
     }
 
-    public void setSpell(@NotNull BrightSpell spell) {
-        setAttribute(BrightItemAttribute.SPELL, spell.getId());
+    public void setSpell(@Nullable BrightSpell spell) {
+        this.spell = spell;
     }
 
-    public void setSpellDescription(@NotNull List<String> spellDescription) {
-        this.spellDescription = spellDescription;
+    public @NotNull String getKey() {
+        return nbt.getOrDefault(new NamespacedKey(plugin, KEY_ATTRIBUTE),
+                PersistentDataType.STRING, "null");
     }
 
-    public long getId() {
-        return this.id;
+    public @Nullable BrightSpell getSpell() {
+        return spell;
+    }
+
+    public @NotNull Rarity getRarity() {
+        return rarity;
+    }
+
+    protected void setRarity(@NotNull Rarity rarity) {
+        this.rarity = rarity;
     }
 
     public List<String> getAdditionalModifierDescription() {
         return additionalModifierDescription;
     }
 
-    public void setAdditionalModifierDescription(List<String> additionalModifierDescription) {
-        this.additionalModifierDescription = additionalModifierDescription;
-    }
-
-    public List<String> getSpellDescription() {
-        return spellDescription;
-    }
-
-    public Damage getAdditionalDamage() {
-        return additionalDamage;
-    }
-
-    public void setAdditionalDamage(Predicate<BrightEntity> additionalDamagePredicate, Damage additionalDamage) {
-        this.additionalDamagePredicate = additionalDamagePredicate;
-        this.additionalDamage = additionalDamage;
-    }
-
-    public Predicate<BrightEntity> getAdditionalDamagePredicate() {
-        return additionalDamagePredicate;
-    }
 
     public enum Rarity {
         COMMON("" + ChatColor.WHITE + ChatColor.BOLD + "COMMON"),

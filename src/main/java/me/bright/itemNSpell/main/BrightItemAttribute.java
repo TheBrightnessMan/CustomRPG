@@ -1,7 +1,6 @@
 package me.bright.itemNSpell.main;
 
 public enum BrightItemAttribute {
-    DAMAGE("DAMAGE", "Damage", 0),
     MAX_HP("MAX_HP", "Max Health", 0),
     ARMOR("ARMOR", "Armor", 0),
     MAGIC_RESIST("MAGIC_RESIST", "Magic Resistance", 0),
@@ -16,10 +15,7 @@ public enum BrightItemAttribute {
     INT("INT", "Intelligence", 0),
     SPELL_DMG("SPELL_DMG", "Bonus Spell Damage (%)", 0),
     FLAT_MAGIC_PEN("FLAT_MAGIC_PEN", "Magical Penetration (Flat)", 0),
-    PERCENT_MAGIC_PEN("PERCENT_MAGIC_PEN", "Magical Penetration (%)", 0),
-
-    SPELL("SPELL", "Spell", -1),
-    ID("ID", "ID", -1);
+    PERCENT_MAGIC_PEN("PERCENT_MAGIC_PEN", "Magical Penetration (%)", 0);
 
     public final String key;
     public final String displayName;

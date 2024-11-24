@@ -5,10 +5,10 @@ import org.bukkit.ChatColor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record Damage(@NotNull DamageType type,
-                     long amount,
-                     @Nullable BrightEntity dealer,
-                     boolean critical) {
+import java.util.Arrays;
+import java.util.List;
+
+public record Damage(@NotNull DamageType type, long amount, @Nullable BrightEntity dealer, boolean critical) {
 
     private static final long balanceFactor = 100;
 
@@ -25,6 +25,53 @@ public record Damage(@NotNull DamageType type,
 
     @Override
     public String toString() {
-        return ChatColor.RED + String.valueOf(amount) + type.color + type.displayName + " Damage";
+        return ChatColor.RED + String.valueOf(amount) + type.color + type.displayName;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Damage(
+                DamageType otherType,
+                long otherAmount,
+                BrightEntity otherDealer,
+                boolean otherCritical
+        ))) return false;
+        return this.type() == otherType &&
+                this.amount() == otherAmount &&
+                this.dealer() == otherDealer &&
+                this.critical() == otherCritical;
+    }
+
+    public static @NotNull List<Damage> mergeDamages(@NotNull List<Damage> damages) {
+        BrightEntity dealer = damages.getFirst().dealer();
+        long physicalDamage = 0L,
+                magicDamage = 0L,
+                trueDamage = 0L;
+        boolean physicalCrit = false,
+                magicCrit = false,
+                trueCrit = false;
+        for (Damage damage : damages) {
+            switch (damage.type()) {
+                case PHYSICAL -> {
+                    physicalDamage += damage.amount;
+                    physicalCrit = physicalCrit || damage.critical();
+                }
+                case MAGIC -> {
+                    magicDamage += damage.amount;
+                    magicCrit = magicCrit || damage.critical();
+                }
+                case TRUE -> {
+                    trueDamage += damage.amount;
+                    trueCrit = trueCrit || damage.critical();
+                }
+            }
+        }
+
+        return Arrays.asList(
+                new Damage(DamageType.PHYSICAL, physicalDamage, dealer, physicalCrit),
+                new Damage(DamageType.MAGIC, magicDamage, dealer, magicCrit),
+                new Damage(DamageType.TRUE, trueDamage, dealer, trueCrit)
+        );
     }
 }

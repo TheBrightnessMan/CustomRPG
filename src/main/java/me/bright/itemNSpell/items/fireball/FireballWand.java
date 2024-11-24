@@ -8,8 +8,8 @@ import org.bukkit.Material;
 
 public class FireballWand extends BrightItem {
 
-    public FireballWand(long id) {
-        super(id, Material.BLAZE_ROD, ChatColor.GOLD + "Fireball Wand");
+    public FireballWand() {
+        super("FIREBALL_WAND", Material.BLAZE_ROD, ChatColor.GOLD + "Fireball Wand");
         setRarity(Rarity.UNCOMMON);
         setSpell(BrightSpellList.FIREBALL);
         setAttribute(BrightItemAttribute.INT, 50);

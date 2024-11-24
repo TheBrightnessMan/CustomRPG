@@ -13,12 +13,14 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class FireboltSpell extends BrightSpell {
 
     private final double projectileSpeed = 10;
 
-    public FireboltSpell(int id) {
-        super(id, "Firebolt",
+    public FireboltSpell() {
+        super("FIREBOLT", "Firebolt",
                 10,
                 new Damage(DamageType.MAGIC, 10, null, false),
                 0,
@@ -51,7 +53,7 @@ public class FireboltSpell extends BrightSpell {
                     if (!(rayTraceResult.getHitEntity() instanceof LivingEntity)) return;
                     if (rayTraceResult.getHitEntity().getType() == EntityType.ARMOR_STAND) return;
                     BrightEntity entity = new BrightEntity((LivingEntity) rayTraceResult.getHitEntity());
-                    Damage damage = player.spellHit(entity, this);
+                    List<Damage> damage = player.spellHit(entity, this);
                     player.getPlayer().sendMessage(getHitMessage(1, damage));
                 });
     }

@@ -2,7 +2,6 @@ package me.bright.itemNSpell.main;
 
 import me.bright.brightrpg.BrightRPG;
 import me.bright.damage.Damage;
-import me.bright.damage.DamageType;
 import me.bright.entity.BrightEntity;
 import me.bright.entity.BrightEntityAttribute;
 import me.bright.entity.BrightPlayer;
@@ -19,24 +18,29 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 public abstract class BrightSpell implements Listener {
 
-    private final String displayName;
+    private static final Logger log = LoggerFactory.getLogger(BrightSpell.class);
+    private final String displayName, key;
     private final Damage baseDamage;
-    private final long id, castTime, manaCost, cooldown;
+    private final long castTime, manaCost, cooldown;
     private final double power, range, radius;
     private final Set<BrightPlayer> onCooldown = new CopyOnWriteArraySet<>();
+    private List<String> description = new ArrayList<>();
 
-    public BrightSpell(long id, String displayName, double power, Damage baseDamage,
+    public BrightSpell(String key, String displayName, double power, Damage baseDamage,
                        long castTimeSeconds, long manaCost, long cooldownSeconds, double range, double radius) {
-        this.id = id;
+        this.key = key;
         this.displayName = displayName;
         this.power = power;
         this.baseDamage = baseDamage;
@@ -53,7 +57,8 @@ public abstract class BrightSpell implements Listener {
         Action action = event.getAction();
         BrightItem mainHand = player.getItemInMainHand();
         if (mainHand == null) return;
-        if (mainHand.getAttribute(BrightItemAttribute.SPELL) != this.id) return;
+        if (mainHand.getSpell() == null) return;
+        if (!mainHand.getSpell().getKey().equals(this.getKey())) return;
         if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
         if (onCooldown.contains(player)) {
             player.getPlayer().sendMessage(ChatColor.RED + "This spell is on cooldown!");
@@ -80,15 +85,23 @@ public abstract class BrightSpell implements Listener {
                 }, castTime * 20L);
     }
 
-    public @NotNull String getHitMessage(int targets, Damage damage) {
-        return ChatColor.GRAY + "Your " +
+    public @NotNull String getHitMessage(int targets, List<Damage> damages) {
+        StringBuilder hitMsg = new StringBuilder(ChatColor.GRAY + "Your " +
                 ChatColor.RED + this.displayName +
-                ChatColor.GRAY + " hit " + targets + " target(s) for " +
-                damage.type().color + damage.amount() + damage.type().displayName + " Damage!";
+                ChatColor.GRAY + " hit " + targets + " target(s) for ");
+        for (Damage damage : damages) {
+            if (damage.amount() <= 0) continue;
+            ;
+            hitMsg.append(damage)
+                    .append(",");
+        }
+        hitMsg.deleteCharAt(hitMsg.length() - 1);
+        hitMsg.append(ChatColor.GRAY).append(" Damage!");
+        return hitMsg.toString();
     }
 
-    public long getId() {
-        return id;
+    public @NotNull String getKey() {
+        return key;
     }
 
     public double getRange() {
@@ -111,15 +124,10 @@ public abstract class BrightSpell implements Listener {
         return baseDamage;
     }
 
-    public @NotNull java.util.List<String> buildAttributes() {
-        final java.util.List<String> lore = new ArrayList<>();
+    public @NotNull List<String> buildAttributes() {
+        final List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "Base Damage: " + ChatColor.RED + baseDamage);
-        lore.add(ChatColor.GRAY + "Power: " + ChatColor.RED + power);
         lore.add(ChatColor.GRAY + "Mana Cost: " + ChatColor.AQUA + manaCost);
-        lore.add(ChatColor.GRAY + "Range: " + ChatColor.GREEN + range + " block(s)");
-        lore.add(ChatColor.GRAY + "Effect Radius: " + ChatColor.GREEN + radius + " block(s)");
-        if (castTime > 0)
-            lore.add(ChatColor.GRAY + "Cast Time: " + ChatColor.GREEN + castTime + "s");
         if (cooldown > 0)
             lore.add(ChatColor.GRAY + "Cooldown: " + ChatColor.GREEN + cooldown + "s");
         return lore;
@@ -193,30 +201,26 @@ public abstract class BrightSpell implements Listener {
                 .toList();
     }
 
-    public long hitTargets(@NotNull BrightEntity caster,
-                           @NotNull Location targetLocation,
-                           @Nullable Consumer<BrightEntity> onHit) {
+    public List<Damage> hitTargets(@NotNull BrightEntity caster,
+                                   @NotNull Location targetLocation,
+                                   @NotNull Consumer<BrightEntity> onHit) {
         Collection<BrightEntity> targets = getTargets(caster, targetLocation);
-        if (targets.isEmpty()) return 0L;
+        if (targets.isEmpty()) return new ArrayList<>();
 
-        long damage = 0;
-        DamageType type;
-        if (onHit == null) {
-            for (BrightEntity target : targets) {
-                damage += caster.spellHit(target, this).amount();
-            }
-        } else {
-            for (BrightEntity target : targets) {
-                onHit.accept(target);
-                damage += caster.spellHit(target, this).amount();
-            }
+        List<Damage> damages = new ArrayList<>();
+        for (BrightEntity target : targets) {
+            onHit.accept(target);
+            damages.addAll(caster.spellHit(target, this));
         }
+        List<Damage> merged = Damage.mergeDamages(damages);
+        caster.getLivingEntity().sendMessage(getHitMessage(targets.size(), merged));
+        return merged;
+    }
 
-        caster.getLivingEntity().sendMessage(getHitMessage(
-                targets.size(),
-                new Damage(DamageType.compress(baseDamage.type()), damage, caster, false)
-        ));
-        return damage;
+    public List<Damage> hitTargets(@NotNull BrightEntity caster,
+                                   @NotNull Location targetLocation) {
+        return hitTargets(caster, targetLocation, entity -> {
+        });
     }
 
     public static boolean isValidTarget(LivingEntity caster, Entity entity) {
@@ -225,4 +229,11 @@ public abstract class BrightSpell implements Listener {
                 !entity.getUniqueId().equals(caster.getUniqueId());
     }
 
+    protected void setDescription(@NotNull List<String> description) {
+        this.description = description;
+    }
+
+    public @NotNull List<String> getDescription() {
+        return description;
+    }
 }

@@ -1,24 +1,34 @@
 package me.bright.itemNSpell.items.exWeapons.itzMeBright;
 
+import me.bright.damage.ConditionalDamage;
+import me.bright.damage.Damage;
+import me.bright.damage.DamageType;
 import me.bright.itemNSpell.main.BrightItem;
 import me.bright.itemNSpell.main.BrightItemAttribute;
 import me.bright.itemNSpell.main.BrightSpellList;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 
+import java.util.Collections;
+
 public class ZeusSceptre extends BrightItem {
 
-    public ZeusSceptre(long id) {
-        super(id, Material.END_ROD, "" + ChatColor.RED + ChatColor.BOLD + "Zeus' Sceptre");
+    public ZeusSceptre() {
+        super("ZEUS_SCEPTRE", Material.END_ROD, "" + ChatColor.RED + ChatColor.BOLD + "Zeus' Sceptre");
         setRarity(Rarity.DIVINE);
         setAttribute(BrightItemAttribute.DMG_REDUCTION, 100);
         setSpell(BrightSpellList.ZEUS_LIGHTNING);
 
-//        Damage additionalDamage = new Damage(DamageType.MAX_HP_TRUE, 100, null, true);
-//
-//        setAdditionalDamage(entity -> true, additionalDamage);
-//        setAdditionalModifierDescription(Collections.singletonList(
-//                ChatColor.GRAY + "Deals an additional " + additionalDamage)
-//        );
+        Damage additionalDamage = new Damage(DamageType.MAX_HP_TRUE, 100, null, true);
+
+        addConditionalDamage(
+                new ConditionalDamage(
+                        (caster, target) -> true,
+                        additionalDamage
+                ),
+                Collections.singletonList(
+                        ChatColor.GRAY + "Melee attacks deal an additional " + additionalDamage
+                )
+        );
     }
 }

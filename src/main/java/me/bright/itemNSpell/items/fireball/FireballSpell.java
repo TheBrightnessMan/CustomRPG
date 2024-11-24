@@ -18,8 +18,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class FireballSpell extends BrightSpell {
 
-    public FireballSpell(long id) {
-        super(id, "Fireball",
+    public FireballSpell() {
+        super("FIREBALL", "Fireball",
                 15,
                 new Damage(DamageType.MAGIC, 30, null, false),
                 0,
@@ -67,6 +67,6 @@ public class FireballSpell extends BrightSpell {
                 hitBlock.getLocation() :
                 hitEntity.getLocation();
 
-        hitTargets(player, hitLocation, null);
+        hitTargets(player, hitLocation);
     }
 }

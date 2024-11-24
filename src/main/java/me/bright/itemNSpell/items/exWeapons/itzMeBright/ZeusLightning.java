@@ -12,9 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class ZeusLightning extends BrightSpell {
 
-    public ZeusLightning(long id) {
-        super(id,
-                "Zeus' Smite",
+    public ZeusLightning() {
+        super("ZEUS_LIGHTNING", "Zeus' Smite",
                 100,
                 new Damage(DamageType.MAX_HP_TRUE, 100, null, false),
                 0,

@@ -7,9 +7,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class BrightSpellList {
 
-    public static FireboltSpell FIREBOLT = new FireboltSpell(0);
-    public static FireballSpell FIREBALL = new FireballSpell(1);
-    public static ZeusLightning ZEUS_LIGHTNING = new ZeusLightning(2);
+    public static FireboltSpell FIREBOLT = new FireboltSpell();
+    public static FireballSpell FIREBALL = new FireballSpell();
+    public static ZeusLightning ZEUS_LIGHTNING = new ZeusLightning();
 
     public static BrightSpell[] values() {
         return new BrightSpell[]{
@@ -19,9 +19,9 @@ public class BrightSpellList {
         };
     }
 
-    public static @Nullable BrightSpell getSpell(long spellId) {
+    public static @Nullable BrightSpell getSpell(String key) {
         for (BrightSpell spell : values()) {
-            if (spell.getId() == spellId) return spell;
+            if (spell.getKey().equals(key)) return spell;
         }
         return null;
     }

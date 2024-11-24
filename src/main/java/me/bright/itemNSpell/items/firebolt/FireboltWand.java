@@ -7,8 +7,8 @@ import org.bukkit.Material;
 
 public class FireboltWand extends BrightItem {
 
-    public FireboltWand(long id) {
-        super(id, Material.STICK, ChatColor.GOLD + "Firebolt Wand");
+    public FireboltWand() {
+        super("FIREBOLT_WAND", Material.STICK, ChatColor.GOLD + "Firebolt Wand");
         setSpell(BrightSpellList.FIREBOLT);
     }
 }
