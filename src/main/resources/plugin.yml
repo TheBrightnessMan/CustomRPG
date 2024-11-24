@@ -1,0 +1,4 @@
+name: BrightRPG
+version: '${project.version}'
+main: me.bright.brightrpg.BrightRPG
+api-version: '1.21.1'
