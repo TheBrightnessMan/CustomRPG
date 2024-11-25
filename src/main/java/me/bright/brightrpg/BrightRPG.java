@@ -11,6 +11,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
@@ -27,15 +28,14 @@ public final class BrightRPG extends JavaPlugin {
     private static BrightRPG plugin;
     private static final List<BrightEntity> entities = new CopyOnWriteArrayList<>();
     private BukkitTask updaterTask;
-
-    private final long regenPeriod = 5 * 20L;
+    private final long regenPeriod = 50L;
 
     @Override
     public void onEnable() {
         plugin = this;
         registerSpells();
         registerRecipes();
-        registerListeners(new EntityRegistrator(), new DamageHandler());
+        registerListeners(new EntityRegistrator(), new ItemConverter(), new DamageHandler());
 
         long period = 10L;
         updaterTask = new BukkitRunnable() {
@@ -62,7 +62,7 @@ public final class BrightRPG extends JavaPlugin {
         }
         Iterator<BrightEntity> iterator = entities.iterator();
         iterator.forEachRemaining(entity -> {
-            if (!(entity instanceof BrightPlayer)) return;
+            if (entity.getLivingEntity().getType() == EntityType.PLAYER) return;
             entity.getLivingEntity().setHealth(0);
             entity.getLivingEntity().remove();
         });
@@ -98,14 +98,7 @@ public final class BrightRPG extends JavaPlugin {
                                 null, new ItemStack(Material.FIRE_CHARGE), null,
                                 null, new ItemStack(Material.BLAZE_ROD), null,
                         },
-                        BrightItemList.FIREBALL_WAND.buildItem()),
-                new CustomRecipeListener(
-                        new ItemStack[]{
-                                new ItemStack(Material.NETHERITE_INGOT), new ItemStack(Material.NETHERITE_AXE), new ItemStack(Material.NETHERITE_INGOT),
-                                new ItemStack(Material.NETHERITE_INGOT), new ItemStack(Material.END_ROD), new ItemStack(Material.NETHERITE_INGOT),
-                                new ItemStack(Material.NETHERITE_INGOT), new ItemStack(Material.END_ROD), new ItemStack(Material.NETHERITE_INGOT),
-                        },
-                        BrightItemList.ZEUS_SCEPTRE.buildItem())
+                        BrightItemList.FIREBALL_WAND.buildItem())
         );
     }
 

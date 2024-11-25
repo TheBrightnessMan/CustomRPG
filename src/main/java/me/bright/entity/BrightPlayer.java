@@ -23,4 +23,8 @@ public class BrightPlayer extends BrightEntity {
         );
     }
 
+    public static BrightPlayer fromPlayer(Player player) {
+        return new BrightPlayer(player);
+    }
+
 }

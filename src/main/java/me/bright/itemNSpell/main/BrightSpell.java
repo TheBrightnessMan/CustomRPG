@@ -197,7 +197,7 @@ public abstract class BrightSpell implements Listener {
                 targetLocation, radius, radius, radius,
                 entity -> isValidTarget(caster.getLivingEntity(), entity));
         return initialTargets.stream()
-                .map(entity -> new BrightEntity((LivingEntity) entity))
+                .map(entity -> BrightEntity.fromLivingEntity((LivingEntity) entity))
                 .toList();
     }
 

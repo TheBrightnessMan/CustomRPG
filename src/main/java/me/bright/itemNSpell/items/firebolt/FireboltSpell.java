@@ -52,7 +52,7 @@ public class FireboltSpell extends BrightSpell {
                     if (rayTraceResult.getHitEntity() == null) return;
                     if (!(rayTraceResult.getHitEntity() instanceof LivingEntity)) return;
                     if (rayTraceResult.getHitEntity().getType() == EntityType.ARMOR_STAND) return;
-                    BrightEntity entity = new BrightEntity((LivingEntity) rayTraceResult.getHitEntity());
+                    BrightEntity entity = BrightEntity.fromLivingEntity((LivingEntity) rayTraceResult.getHitEntity());
                     List<Damage> damage = player.spellHit(entity, this);
                     player.getPlayer().sendMessage(getHitMessage(1, damage));
                 });

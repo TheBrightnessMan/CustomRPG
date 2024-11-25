@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class BrightEntity {
 
@@ -37,14 +38,29 @@ public class BrightEntity {
     private final LivingEntity livingEntity;
     private final PersistentDataContainer nbt;
     private final String name;
-    private final long hpRegen = 5L;
-    private final long manaRegen = 10L;
+    private final long hpRegen = 2L;
+    private final long manaRegen = 5L;
+    private static final String KEY_ATTRIBUTE = "KEY", DEFAULT_KEY = "null";
 
-    public BrightEntity(@NotNull LivingEntity livingEntity) {
+    protected BrightEntity(@NotNull LivingEntity livingEntity) {
         this.livingEntity = livingEntity;
         this.plugin = BrightRPG.getPlugin();
         this.nbt = livingEntity.getPersistentDataContainer();
-        this.name = livingEntity.getName();
+        String nbtName = nbt.getOrDefault(new NamespacedKey(plugin, "NAME"),
+                PersistentDataType.STRING, "null");
+        this.name = (nbtName.equals("null")) ?
+                toPrettyString(livingEntity.getType().toString()) :
+                nbtName;
+    }
+
+    public static @Nullable BrightEntity fromLivingEntity(@Nullable LivingEntity entity) {
+        if (entity == null) return null;
+        PersistentDataContainer nbt = entity.getPersistentDataContainer();
+        String givenKey = nbt.getOrDefault(new NamespacedKey(BrightRPG.getPlugin(), KEY_ATTRIBUTE),
+                PersistentDataType.STRING, DEFAULT_KEY);
+        return (givenKey.equals(DEFAULT_KEY)) ?
+                BrightEntityList.getVanillaEntity(entity) :
+                BrightEntityList.getCustomEntity(givenKey);
     }
 
     public LivingEntity getLivingEntity() {
@@ -56,8 +72,16 @@ public class BrightEntity {
     }
 
     public long getEntityAttribute(@NotNull BrightEntityAttribute attribute) {
-        return nbt.getOrDefault(new NamespacedKey(plugin, attribute.key),
-                PersistentDataType.LONG, attribute.defaultValue);
+        long result = 0;
+        switch (attribute) {
+            case CURRENT_HP -> result = nbt.getOrDefault(new NamespacedKey(plugin, attribute.key),
+                    PersistentDataType.LONG, getMaxHp());
+            case CURRENT_MANA -> result = nbt.getOrDefault(new NamespacedKey(plugin, attribute.key),
+                    PersistentDataType.LONG, getMaxMana());
+            default -> result = nbt.getOrDefault(new NamespacedKey(plugin, attribute.key),
+                    PersistentDataType.LONG, attribute.defaultValue);
+        }
+        return result;
     }
 
     public long setEntityAttribute(@NotNull BrightEntityAttribute attribute, long val) {
@@ -153,6 +177,7 @@ public class BrightEntity {
         if (currentHp <= 0 || maxHp <= 0) {
             plugin.getLogger().log(Level.SEVERE,
                     "Current hp or max hp <= 0! How did we get here!");
+            livingEntity.remove();
             return new ArrayList<>();
         }
 
@@ -487,6 +512,12 @@ public class BrightEntity {
         if (critChance <= 0) return false;
         if (critChance >= 100) return true;
         return new Random().nextInt(1, 101) <= critChance;
+    }
+
+    private String toPrettyString(String key) {
+        return Arrays.stream(key.toLowerCase().split("_"))
+                .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1))
+                .collect(Collectors.joining(" "));
     }
 
     @Override

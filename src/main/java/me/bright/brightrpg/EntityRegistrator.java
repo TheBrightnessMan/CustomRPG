@@ -3,6 +3,8 @@ package me.bright.brightrpg;
 import me.bright.entity.BrightEntity;
 import me.bright.entity.BrightEntityAttribute;
 import me.bright.entity.BrightPlayer;
+import me.bright.itemNSpell.main.BrightItem;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -10,20 +12,31 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 public class EntityRegistrator implements Listener {
 
     @EventHandler
     public void onSpawn(CreatureSpawnEvent event) {
         if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) return;
-        BrightRPG.addEntity(new BrightEntity(event.getEntity()));
+        BrightEntity entity = BrightEntity.fromLivingEntity(event.getEntity());
+        BrightRPG.addEntity(entity);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        BrightRPG.addEntity(new BrightPlayer(event.getPlayer()));
-//        PlayerInventory inventory = event.getPlayer().getInventory();
-//        inventory.addItem(new FireballWand().buildItem());
+        Player bukkitPlayer = event.getPlayer();
+        BrightRPG.addEntity(new BrightPlayer(bukkitPlayer));
+        PlayerInventory playerInventory = bukkitPlayer.getInventory();
+        ItemStack[] contents = playerInventory.getContents();
+        for (int i = 0; i <= 40; i++) {
+            ItemStack itemStack = contents[i];
+            if (itemStack == null) continue;
+            BrightItem brightItem = BrightItem.fromItemStack(itemStack);
+            if (brightItem == null) continue;
+            playerInventory.setItem(i, brightItem.buildItem());
+        }
     }
 
     @EventHandler

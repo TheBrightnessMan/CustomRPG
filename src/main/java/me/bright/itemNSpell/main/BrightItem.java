@@ -7,6 +7,10 @@ import me.bright.damage.DamageType;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.inventory.EquipmentSlotGroup;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -28,7 +32,7 @@ public class BrightItem {
     private final PersistentDataContainer nbt;
 
     private final String name;
-    private static final String KEY_ATTRIBUTE = "KEY", DEFAULT_KEY = "null";
+    public static final String KEY_ATTRIBUTE = "KEY", DEFAULT_KEY = "null";
     private final Map<BrightItemAttribute, Long> attributes = new HashMap<>();
     private Rarity rarity = Rarity.COMMON;
     private BrightSpell spell = null;
@@ -37,7 +41,7 @@ public class BrightItem {
     private final List<ConditionalDamage> conditionalDamages = new ArrayList<>();
     private final List<String> additionalModifierDescription = new ArrayList<>();
 
-    protected BrightItem(String key, @NotNull Material material, @NotNull String name) {
+    protected BrightItem(@NotNull String key, @NotNull Material material, @NotNull String name) {
         this.itemStack = new ItemStack(material);
         this.itemMeta = itemStack.getItemMeta();
         assert itemMeta != null;
@@ -56,10 +60,9 @@ public class BrightItem {
         PersistentDataContainer nbt = itemMeta.getPersistentDataContainer();
         String givenKey = nbt.getOrDefault(new NamespacedKey(BrightRPG.getPlugin(), KEY_ATTRIBUTE),
                 PersistentDataType.STRING, DEFAULT_KEY);
-        if (givenKey.equals(DEFAULT_KEY)) {
-            return new BrightItem(DEFAULT_KEY, itemStack.getType(), itemMeta.getDisplayName());
-        }
-        return BrightItemList.getItem(givenKey);
+        if (givenKey.equals(DEFAULT_KEY))
+            return BrightItemList.getVanillaItem(itemStack);
+        return BrightItemList.getCustomItem(givenKey);
     }
 
     public long getAttribute(@NotNull BrightItemAttribute attribute) {
@@ -98,8 +101,7 @@ public class BrightItem {
         return conditionalDamages;
     }
 
-    public @Nullable ItemStack buildItem() {
-        if (itemStack == null || itemMeta == null) return null;
+    public @NotNull ItemStack buildItem() {
         List<String> finalLore = buildAttributeLore();
         if (!additionalModifierDescription.isEmpty()) {
             finalLore.add("");
@@ -115,6 +117,14 @@ public class BrightItem {
         finalLore.add("");
         finalLore.add(rarity.displayName);
         itemMeta.setLore(finalLore);
+        itemMeta.setUnbreakable(true);
+        itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES);
+        itemMeta.addAttributeModifier(Attribute.GENERIC_LUCK, new AttributeModifier(
+                new NamespacedKey(plugin, "dummy"),
+                0,
+                AttributeModifier.Operation.ADD_NUMBER,
+                EquipmentSlotGroup.ANY
+        ));
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }

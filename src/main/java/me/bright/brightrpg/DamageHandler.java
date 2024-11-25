@@ -21,13 +21,13 @@ public class DamageHandler implements Listener {
         event.setDamage(0.01);
 
         if (damagerEntity instanceof LivingEntity)
-            attacker = new BrightEntity((LivingEntity) damagerEntity);
+            attacker = BrightEntity.fromLivingEntity((LivingEntity) damagerEntity);
         if (damagerEntity instanceof Player)
-            attacker = new BrightPlayer((Player) damagerEntity);
+            attacker = BrightPlayer.fromPlayer((Player) damagerEntity);
         if (!(targetEntity instanceof LivingEntity)) return;
         if (targetEntity.getType() == EntityType.ARMOR_STAND) return;
 
-        victim = new BrightEntity((LivingEntity) targetEntity);
+        victim = BrightEntity.fromLivingEntity((LivingEntity) targetEntity);
 
         switch (event.getCause()) {
             case ENTITY_ATTACK, ENTITY_SWEEP_ATTACK -> {
