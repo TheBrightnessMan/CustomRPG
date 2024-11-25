@@ -10,7 +10,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 public class InfinityGauntlet extends BrightItem {
 

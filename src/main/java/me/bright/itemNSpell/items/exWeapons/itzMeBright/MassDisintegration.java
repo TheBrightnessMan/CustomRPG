@@ -1,7 +1,6 @@
 package me.bright.itemNSpell.items.exWeapons.itzMeBright;
 
 import me.bright.damage.Damage;
-import me.bright.damage.DamageType;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightSpell;
 import org.bukkit.ChatColor;
