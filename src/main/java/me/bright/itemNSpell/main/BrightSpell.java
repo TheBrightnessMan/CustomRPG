@@ -86,18 +86,11 @@ public abstract class BrightSpell implements Listener {
     }
 
     public @NotNull String getHitMessage(int targets, List<Damage> damages) {
-        StringBuilder hitMsg = new StringBuilder(ChatColor.GRAY + "Your " +
-                ChatColor.RED + this.displayName +
-                ChatColor.GRAY + " hit " + targets + " target(s) for ");
-        for (Damage damage : damages) {
-            if (damage.amount() <= 0) continue;
-            ;
-            hitMsg.append(damage)
-                    .append(",");
-        }
-        hitMsg.deleteCharAt(hitMsg.length() - 1);
-        hitMsg.append(ChatColor.GRAY).append(" Damage!");
-        return hitMsg.toString();
+        return ChatColor.GRAY + "Your " +
+                ChatColor.RED + displayName +
+                ChatColor.GRAY + " hit " + targets +
+                " target(s) for " + Damage.mergedDamageToString(damages) +
+                ChatColor.GRAY + " Damage!";
     }
 
     public @NotNull String getKey() {
@@ -210,7 +203,13 @@ public abstract class BrightSpell implements Listener {
         List<Damage> damages = new ArrayList<>();
         for (BrightEntity target : targets) {
             onHit.accept(target);
-            damages.addAll(caster.spellHit(target, this));
+            List<Damage> damage = caster.spellHit(target, this);
+            String messageToTarget = ChatColor.GRAY + caster.getName() + " hit you with " +
+                    ChatColor.RED + displayName +
+                    ChatColor.GRAY + " for " +
+                    Damage.mergedDamageToString(damage) + ChatColor.GRAY + " Damage!";
+            target.getLivingEntity().sendMessage(messageToTarget);
+            damages.addAll(damage);
         }
         List<Damage> merged = Damage.mergeDamages(damages);
         caster.getLivingEntity().sendMessage(getHitMessage(targets.size(), merged));

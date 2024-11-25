@@ -175,8 +175,6 @@ public class BrightEntity {
                 maxHpPercent = (double) maxHp / 100;
 
         if (currentHp <= 0 || maxHp <= 0) {
-            plugin.getLogger().log(Level.SEVERE,
-                    "Current hp or max hp <= 0! How did we get here!");
             livingEntity.remove();
             return new ArrayList<>();
         }
@@ -240,9 +238,9 @@ public class BrightEntity {
                 total = finalPhysical + finalMagic + finalTrue;
 
         if (total >= currentHp)
-            setEntityAttribute(BrightEntityAttribute.CURRENT_HP, currentHp - total);
-        else
-            livingEntity.remove();
+            livingEntity.setHealth(0);
+
+        setEntityAttribute(BrightEntityAttribute.CURRENT_HP, currentHp - total);
 
         return Arrays.asList(
                 new Damage(DamageType.PHYSICAL, finalPhysical, dealer, physicalCrit),

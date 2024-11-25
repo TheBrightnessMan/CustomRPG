@@ -4,23 +4,27 @@ import me.bright.damage.Damage;
 import me.bright.damage.DamageType;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightSpell;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 
-public class ZeusLightning extends BrightSpell {
+import java.util.Collections;
 
-    public ZeusLightning() {
-        super("ZEUS_LIGHTNING", "Zeus' Smite",
+public class MassDisintegration extends BrightSpell {
+
+    public MassDisintegration() {
+        super("MASS_DISINTEGRATION", "Universal Disintegration",
                 100,
-                new Damage(DamageType.MAX_HP_TRUE, 100, null, false),
+                Damage.noDamage,
                 0,
                 0,
                 0,
                 -1,
                 100);
+        setDescription(Collections.singletonList(ChatColor.GRAY + "Disintegrate all living entities in range"));
     }
 
     @Override
@@ -42,7 +46,7 @@ public class ZeusLightning extends BrightSpell {
                     Location targetLocation = bukkitEntity.getLocation();
                     World world = targetLocation.getWorld();
                     if (world == null) return;
-                    world.strikeLightning(targetLocation);
+                    world.strikeLightningEffect(targetLocation);
                 }
         );
     }

@@ -44,6 +44,12 @@ public record Damage(@NotNull DamageType type, long amount, @Nullable BrightEnti
     }
 
     public static @NotNull List<Damage> mergeDamages(@NotNull List<Damage> damages) {
+        if (damages.isEmpty())
+            return Arrays.asList(
+                    new Damage(DamageType.PHYSICAL, 0, null, false),
+                    new Damage(DamageType.MAGIC, 0, null, false),
+                    new Damage(DamageType.TRUE, 0, null, false)
+            );
         BrightEntity dealer = damages.getFirst().dealer();
         long physicalDamage = 0L,
                 magicDamage = 0L,
@@ -73,5 +79,16 @@ public record Damage(@NotNull DamageType type, long amount, @Nullable BrightEnti
                 new Damage(DamageType.MAGIC, magicDamage, dealer, magicCrit),
                 new Damage(DamageType.TRUE, trueDamage, dealer, trueCrit)
         );
+    }
+
+    public static @NotNull String mergedDamageToString(@NotNull List<Damage> damages) {
+        StringBuilder hitMsg = new StringBuilder();
+        for (Damage damage : damages) {
+            if (damage.amount() <= 0) continue;
+            hitMsg.append(damage)
+                    .append(",");
+        }
+        hitMsg.deleteCharAt(hitMsg.length() - 1);
+        return hitMsg.toString();
     }
 }

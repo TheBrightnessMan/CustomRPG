@@ -5,9 +5,11 @@ import me.bright.damage.Damage;
 import me.bright.damage.DamageType;
 import me.bright.itemNSpell.main.BrightItem;
 import me.bright.itemNSpell.main.BrightItemAttribute;
+import me.bright.itemNSpell.main.BrightSpellList;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 public class InfinityGauntlet extends BrightItem {
@@ -23,9 +25,11 @@ public class InfinityGauntlet extends BrightItem {
                         (caster, target) -> true,
                         additionalDamage
                 ),
-                Collections.singletonList(
-                        ChatColor.GRAY + "Melee attacks deal an additional " + additionalDamage
+                Arrays.asList(
+                        ChatColor.GRAY + "Attacks and Spells deal an additional",
+                        additionalDamage.toString() + ChatColor.GRAY + " damage"
                 )
         );
+        setSpell(BrightSpellList.MASS_DISINTEGRATION);
     }
 }
