@@ -239,7 +239,11 @@ public class BrightEntity {
                 finalTrue = (long) Math.max(0, rawTrue),
                 total = finalPhysical + finalMagic + finalTrue;
 
-        setEntityAttribute(BrightEntityAttribute.CURRENT_HP, Math.max(currentHp - total, 0));
+        if (total >= currentHp)
+            setEntityAttribute(BrightEntityAttribute.CURRENT_HP, currentHp - total);
+        else
+            livingEntity.remove();
+
         return Arrays.asList(
                 new Damage(DamageType.PHYSICAL, finalPhysical, dealer, physicalCrit),
                 new Damage(DamageType.MAGIC, finalMagic, dealer, magicCrit),
@@ -522,6 +526,7 @@ public class BrightEntity {
 
     @Override
     public boolean equals(Object obj) {
+        if (this == obj) return true;
         if (!(obj instanceof BrightEntity)) return false;
         return livingEntity.getUniqueId().equals(((BrightEntity) obj).getLivingEntity().getUniqueId());
     }

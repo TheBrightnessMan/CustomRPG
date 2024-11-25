@@ -119,12 +119,13 @@ public class BrightItem {
         itemMeta.setLore(finalLore);
         itemMeta.setUnbreakable(true);
         itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES);
-        itemMeta.addAttributeModifier(Attribute.GENERIC_LUCK, new AttributeModifier(
-                new NamespacedKey(plugin, "dummy"),
-                0,
-                AttributeModifier.Operation.ADD_NUMBER,
-                EquipmentSlotGroup.ANY
-        ));
+        if (itemMeta.getAttributeModifiers() != null && itemMeta.getAttributeModifiers().isEmpty())
+            itemMeta.addAttributeModifier(Attribute.GENERIC_LUCK, new AttributeModifier(
+                    new NamespacedKey(plugin, "dummy"),
+                    0,
+                    AttributeModifier.Operation.ADD_NUMBER,
+                    EquipmentSlotGroup.ANY
+            ));
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }

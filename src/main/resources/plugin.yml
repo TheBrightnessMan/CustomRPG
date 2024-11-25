@@ -2,3 +2,7 @@ name: BrightRPG
 version: '${project.version}'
 main: me.bright.brightrpg.BrightRPG
 api-version: '1.21.1'
+commands:
+  brightrpg:
+    usage: /brightrpg
+    description: Opens a cheat inventory containing all custom items

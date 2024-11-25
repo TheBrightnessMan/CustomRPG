@@ -18,17 +18,5 @@ public class ZeusSceptre extends BrightItem {
         setRarity(Rarity.DIVINE);
         setAttribute(BrightItemAttribute.DMG_REDUCTION, 100);
         setSpell(BrightSpellList.ZEUS_LIGHTNING);
-
-        Damage additionalDamage = new Damage(DamageType.MAX_HP_TRUE, 100, null, true);
-
-        addConditionalDamage(
-                new ConditionalDamage(
-                        (caster, target) -> true,
-                        additionalDamage
-                ),
-                Collections.singletonList(
-                        ChatColor.GRAY + "Melee attacks deal an additional " + additionalDamage
-                )
-        );
     }
 }

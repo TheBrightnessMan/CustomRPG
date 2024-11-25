@@ -9,8 +9,10 @@ import me.bright.itemNSpell.main.BrightSpellList;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Listener;
@@ -22,6 +24,8 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class BrightRPG extends JavaPlugin {
 
@@ -35,6 +39,7 @@ public final class BrightRPG extends JavaPlugin {
         plugin = this;
         registerSpells();
         registerRecipes();
+        registerCommand("brightrpg", new BrightCommand());
         registerListeners(new EntityRegistrator(), new ItemConverter(), new DamageHandler());
 
         long period = 10L;
@@ -100,6 +105,12 @@ public final class BrightRPG extends JavaPlugin {
                         },
                         BrightItemList.FIREBALL_WAND.buildItem())
         );
+    }
+
+    private void registerCommand(String command, CommandExecutor commandExecutor) {
+        Logger logger = Bukkit.getLogger();
+        this.getCommand(command).setExecutor(commandExecutor);
+        logger.log(Level.INFO, command + " command Registered");
     }
 
     private void updatePlayer(long triggerRegen, BrightPlayer player) {

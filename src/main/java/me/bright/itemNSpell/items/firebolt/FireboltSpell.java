@@ -5,6 +5,7 @@ import me.bright.damage.DamageType;
 import me.bright.entity.BrightEntity;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightSpell;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.EntityType;
@@ -46,13 +47,14 @@ public class FireboltSpell extends BrightSpell {
         Vector direction = player.getPlayer().getLocation().getDirection().clone().normalize();
         BrightSpell.shootProjectile(player,
                 start, direction, getRadius(), getRange(), projectileSpeed,
-                Particle.FLAME,
-                null,
+                Particle.DUST,
+                new Particle.DustOptions(Color.ORANGE, 3),
                 rayTraceResult -> {
                     if (rayTraceResult.getHitEntity() == null) return;
                     if (!(rayTraceResult.getHitEntity() instanceof LivingEntity)) return;
                     if (rayTraceResult.getHitEntity().getType() == EntityType.ARMOR_STAND) return;
                     BrightEntity entity = BrightEntity.fromLivingEntity((LivingEntity) rayTraceResult.getHitEntity());
+                    if (entity == null) return;
                     List<Damage> damage = player.spellHit(entity, this);
                     player.getPlayer().sendMessage(getHitMessage(1, damage));
                 });
