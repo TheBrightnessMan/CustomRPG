@@ -1,7 +1,7 @@
 package me.bright.brightrpg;
 
 import me.bright.itemNSpell.main.BrightItem;
-import me.bright.itemNSpell.main.BrightItemList;
+import me.bright.itemNSpell.main.BrightItems;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,12 +13,11 @@ import org.jetbrains.annotations.NotNull;
 public class BrightCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
-        if (!(commandSender instanceof Player)) return true;
+        if (!(commandSender instanceof Player sender)) return true;
         if (!command.getName().equalsIgnoreCase("brightRPG")) return true;
-        Player sender = (Player) commandSender;
         if (!sender.hasPermission("brightrpg.all")) return true;
 
-        BrightItem[] customItems = BrightItemList.values();
+        BrightItem[] customItems = BrightItems.items;
         Inventory inventory = Bukkit.createInventory(null,
                 roundUp(customItems.length, 9), "Custom Items");
         for (BrightItem brightItem : customItems) {

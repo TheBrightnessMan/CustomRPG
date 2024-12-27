@@ -1,6 +1,5 @@
-package me.bright.itemNSpell.items.exWeapons.itzMeBright;
+package me.bright.itemNSpell.items.exWeapons.itzMeBright.infinityGauntlet;
 
-import me.bright.damage.Damage;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightSpell;
 import org.bukkit.ChatColor;
@@ -16,28 +15,21 @@ public class MassDisintegration extends BrightSpell {
 
     public MassDisintegration() {
         super("MASS_DISINTEGRATION", "Universal Disintegration",
-                100,
-                Damage.noDamage,
-                0,
+                3,
                 0,
                 0,
                 -1,
-                100);
+                20);
         setDescription(Collections.singletonList(ChatColor.GRAY + "Disintegrate all living entities in range"));
     }
 
     @Override
     public void onChannel(@NotNull BrightPlayer player) {
-
+        showRangeIndicator(player);
     }
 
     @Override
     public void onChannelComplete(@NotNull BrightPlayer player) {
-
-    }
-
-    @Override
-    public void onRightClick(@NotNull PlayerInteractEvent event, @NotNull BrightPlayer player) {
         Location location = player.getPlayer().getLocation();
         hitTargets(player, location,
                 entity -> {
@@ -48,5 +40,10 @@ public class MassDisintegration extends BrightSpell {
                     world.strikeLightningEffect(targetLocation);
                 }
         );
+    }
+
+    @Override
+    public void onRightClick(@NotNull PlayerInteractEvent event, @NotNull BrightPlayer player) {
+
     }
 }

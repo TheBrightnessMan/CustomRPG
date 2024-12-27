@@ -1,14 +1,15 @@
-package me.bright.brightrpg;
+package me.bright.listener;
 
+import me.bright.brightrpg.BrightRPG;
+import me.bright.brightrpg.BrightStats;
 import me.bright.entity.BrightEntity;
-import me.bright.entity.BrightEntityAttribute;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightItem;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -19,15 +20,21 @@ public class EntityRegistrator implements Listener {
 
     @EventHandler
     public void onSpawn(CreatureSpawnEvent event) {
-        if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) return;
-        BrightEntity entity = BrightEntity.fromLivingEntity(event.getEntity());
+//        if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM) {
+//            event.setCancelled(true);
+//            return;
+//        }
+        if (event.getEntityType() == EntityType.ARMOR_STAND) return;
+        BrightEntity entity = new BrightEntity(event.getEntity());
         BrightRPG.addEntity(entity);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player bukkitPlayer = event.getPlayer();
-        BrightRPG.addEntity(new BrightPlayer(bukkitPlayer));
+        BrightPlayer brightPlayer = new BrightPlayer(bukkitPlayer);
+        BrightRPG.addEntity(brightPlayer);
+        BrightRPG.addPlayer(brightPlayer);
         PlayerInventory playerInventory = bukkitPlayer.getInventory();
         ItemStack[] contents = playerInventory.getContents();
         for (int i = 0; i <= 40; i++) {
@@ -40,15 +47,10 @@ public class EntityRegistrator implements Listener {
     }
 
     @EventHandler
-    public void onDeath(PlayerDeathEvent event) {
-        BrightRPG.removeEntity(event.getEntity());
-    }
-
-    @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
-        BrightPlayer player = new BrightPlayer(event.getPlayer());
-        BrightRPG.addEntity(player);
-        player.setEntityAttribute(BrightEntityAttribute.CURRENT_HP, player.getMaxHp());
+        BrightPlayer player = BrightPlayer.fromBukkitPlayer(event.getPlayer());
+        if (player == null) return;
+        player.setCurrentHp(player.getStatFromCache(BrightStats.MAX_HP));
     }
 
     @EventHandler

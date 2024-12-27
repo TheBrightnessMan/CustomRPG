@@ -1,4 +1,4 @@
-package me.bright.brightrpg;
+package me.bright.listener;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -11,7 +11,7 @@ public class CustomRecipeListener implements Listener {
     private final ItemStack[] matrix;
     private final ItemStack result;
 
-    CustomRecipeListener(ItemStack[] matrix, ItemStack result) {
+    public CustomRecipeListener(ItemStack[] matrix, ItemStack result) {
         this.matrix = matrix;
         this.result = result;
     }

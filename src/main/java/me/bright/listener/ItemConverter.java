@@ -1,4 +1,4 @@
-package me.bright.brightrpg;
+package me.bright.listener;
 
 import me.bright.itemNSpell.main.BrightItem;
 import org.bukkit.entity.Item;
@@ -16,6 +16,7 @@ public class ItemConverter implements Listener {
         Item item = event.getItem();
         BrightItem brightItem = BrightItem.fromItemStack(item.getItemStack());
         if (brightItem == null) return;
+        brightItem.getItemStack().setAmount(item.getItemStack().getAmount());
         event.getItem().setItemStack(brightItem.buildItem());
     }
 

@@ -1,7 +1,5 @@
 package me.bright.itemNSpell.items.fireball;
 
-import me.bright.damage.Damage;
-import me.bright.damage.DamageType;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightSpell;
 import org.bukkit.Location;
@@ -20,8 +18,6 @@ public class FireballSpell extends BrightSpell {
 
     public FireballSpell() {
         super("FIREBALL", "Fireball",
-                15,
-                new Damage(DamageType.MAGIC, 30, null, false),
                 0,
                 10,
                 5,
@@ -58,7 +54,8 @@ public class FireballSpell extends BrightSpell {
         if (!(event.getEntity() instanceof Fireball fireball)) return;
         if (!((fireball.getShooter()) instanceof Player)) return;
 
-        BrightPlayer player = new BrightPlayer((Player) fireball.getShooter());
+        BrightPlayer player = BrightPlayer.fromBukkitPlayer((Player) fireball.getShooter());
+        if (player == null) return;
         Entity hitEntity = event.getHitEntity();
         Block hitBlock = event.getHitBlock();
         if (hitEntity == null && hitBlock == null) return;

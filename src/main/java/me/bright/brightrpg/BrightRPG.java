@@ -1,16 +1,19 @@
 package me.bright.brightrpg;
 
-import me.bright.damage.DamageType;
 import me.bright.entity.BrightEntity;
 import me.bright.entity.BrightPlayer;
-import me.bright.itemNSpell.main.BrightItemList;
+import me.bright.itemNSpell.main.BrightItems;
 import me.bright.itemNSpell.main.BrightSpell;
-import me.bright.itemNSpell.main.BrightSpellList;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
+import me.bright.itemNSpell.main.BrightSpells;
+import me.bright.listener.CustomRecipeListener;
+import me.bright.listener.DamageHandler;
+import me.bright.listener.EntityRegistrator;
+import me.bright.listener.ItemConverter;
+import me.bright.listener.launchpad.CoalToGoldLaunchPad;
+import me.bright.listener.launchpad.DeepToGoldLaunchPad;
+import me.bright.listener.launchpad.GoldToCoalLaunchPad;
+import me.bright.listener.launchpad.GoldToDeepLaunchPad;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.EntityType;
@@ -31,31 +34,35 @@ public final class BrightRPG extends JavaPlugin {
 
     private static BrightRPG plugin;
     private static final List<BrightEntity> entities = new CopyOnWriteArrayList<>();
+    private static final List<BrightPlayer> players = new CopyOnWriteArrayList<>();
     private BukkitTask updaterTask;
-    private final long regenPeriod = 50L;
+    private final long regenPeriod = 2 * 20L;
 
     @Override
     public void onEnable() {
         plugin = this;
         registerSpells();
         registerRecipes();
+        // registerLaunchPads();
         registerCommand("brightrpg", new BrightCommand());
         registerListeners(new EntityRegistrator(), new ItemConverter(), new DamageHandler());
 
-        long period = 10L;
+        long period = 1L;
         updaterTask = new BukkitRunnable() {
-            long triggerRegen = 0L;
+            long tick = 0L;
 
             @Override
             public void run() {
-                updateEntities(triggerRegen);
-                triggerRegen = (triggerRegen + period) % regenPeriod;
+                if (tick % 2 == 0) {
+                    updateEntities(tick);
+                }
+                tick = (tick + period) % 1200L;
             }
         }.runTaskTimer(this, 0L, period);
     }
 
     private void registerSpells() {
-        for (BrightSpell spell : BrightSpellList.values()) {
+        for (BrightSpell spell : BrightSpells.values()) {
             registerListeners(spell);
         }
     }
@@ -72,13 +79,14 @@ public final class BrightRPG extends JavaPlugin {
             entity.getLivingEntity().remove();
         });
         entities.clear();
+        players.clear();
     }
 
-    private void updateEntities(long triggerRegen) {
+    private void updateEntities(long tick) {
         Iterator<BrightEntity> iterator = entities.iterator();
         iterator.forEachRemaining(entity -> {
-            if (entity instanceof BrightPlayer) {
-                updatePlayer(triggerRegen, (BrightPlayer) entity);
+            if (entity instanceof BrightPlayer player) {
+                updatePlayer(tick, player);
                 return;
             }
             if (!entity.update()) {
@@ -96,14 +104,14 @@ public final class BrightRPG extends JavaPlugin {
                                 null, new ItemStack(Material.TORCH), null,
                                 null, new ItemStack(Material.STICK), null,
                         },
-                        BrightItemList.FIREBOLT_WAND.buildItem()),
+                        BrightItems.FIREBOLT_WAND.buildItem()),
                 new CustomRecipeListener(
                         new ItemStack[]{
                                 null, new ItemStack(Material.BLAZE_POWDER), null,
                                 null, new ItemStack(Material.FIRE_CHARGE), null,
                                 null, new ItemStack(Material.BLAZE_ROD), null,
                         },
-                        BrightItemList.FIREBALL_WAND.buildItem())
+                        BrightItems.FIREBALL_WAND.buildItem())
         );
     }
 
@@ -113,23 +121,20 @@ public final class BrightRPG extends JavaPlugin {
         logger.log(Level.INFO, command + " command Registered");
     }
 
-    private void updatePlayer(long triggerRegen, BrightPlayer player) {
+    private void registerLaunchPads() {
+        registerListeners(new CoalToGoldLaunchPad(), new GoldToCoalLaunchPad(),
+                new GoldToDeepLaunchPad(), new DeepToGoldLaunchPad());
+    }
+
+    private void updatePlayer(long tick, BrightPlayer player) {
         if (!player.update()) return;
-        BaseComponent message = TextComponent.fromLegacy("" +
-                ChatColor.RED + player.getCurrentHp() +
-                ChatColor.GRAY + "/" +
-                ChatColor.DARK_RED + player.getMaxHp() + "♥" +
-                ChatColor.RESET + "       " +
-                DamageType.PHYSICAL.color + player.getArmor() +
-                ChatColor.GRAY + "/" +
-                DamageType.MAGIC.color + player.getMagicResist() +
-                ChatColor.RESET + "       " +
-                ChatColor.AQUA + player.getCurrentMana() +
-                ChatColor.GRAY + "/" +
-                ChatColor.DARK_BLUE + player.getMaxMana() + "✎");
-        player.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, message);
+        player.sendActionBar();
+
         player.getPlayer().setFoodLevel(20);
-        if (triggerRegen == 0) player.regenResources();
+        if (tick % 20 == 0) {
+            player.naturalHpRegenTick();
+            player.naturalManaRegenTick();
+        }
     }
 
     private void registerListeners(Listener... listeners) {
@@ -148,6 +153,23 @@ public final class BrightRPG extends JavaPlugin {
 
     public static void removeEntity(LivingEntity entity) {
         entities.removeIf(brightEntity ->
-                brightEntity.getLivingEntity().getUniqueId() == entity.getUniqueId());
+                brightEntity.equals(entity));
+    }
+
+    public static List<BrightPlayer> getPlayers() {
+        return players;
+    }
+
+    public static void addPlayer(BrightPlayer player) {
+        players.add(player);
+    }
+
+    public static void removeEntity(BrightPlayer player) {
+        players.removeIf(brightPlayer ->
+                brightPlayer.equals(player));
+    }
+
+    public static List<BrightEntity> getEntities() {
+        return entities;
     }
 }

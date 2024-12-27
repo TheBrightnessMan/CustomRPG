@@ -30,10 +30,11 @@ public enum DamageType {
 
 
     public static @NotNull DamageType compress(DamageType type) {
-        DamageType ret = TRUE;
+        DamageType ret = null;
         switch (type) {
             case PHYSICAL, CURRENT_HP_PHYSICAL, MISSING_HP_PHYSICAL, MAX_HP_PHYSICAL -> ret = PHYSICAL;
             case MAGIC, CURRENT_HP_MAGIC, MISSING_HP_MAGIC, MAX_HP_MAGIC -> ret = MAGIC;
+            case TRUE, CURRENT_HP_TRUE, MISSING_HP_TRUE, MAX_HP_TRUE -> ret = TRUE;
         }
         return ret;
     }

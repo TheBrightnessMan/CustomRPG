@@ -1,7 +1,6 @@
 package me.bright.itemNSpell.items.firebolt;
 
-import me.bright.damage.Damage;
-import me.bright.damage.DamageType;
+import me.bright.damage.BrightDamage;
 import me.bright.entity.BrightEntity;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightSpell;
@@ -14,16 +13,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
 public class FireboltSpell extends BrightSpell {
 
     private final double projectileSpeed = 10;
 
     public FireboltSpell() {
         super("FIREBOLT", "Firebolt",
-                10,
-                new Damage(DamageType.MAGIC, 10, null, false),
                 0,
                 3,
                 1,
@@ -55,8 +50,8 @@ public class FireboltSpell extends BrightSpell {
                     if (rayTraceResult.getHitEntity().getType() == EntityType.ARMOR_STAND) return;
                     BrightEntity entity = BrightEntity.fromLivingEntity((LivingEntity) rayTraceResult.getHitEntity());
                     if (entity == null) return;
-                    List<Damage> damage = player.spellHit(entity, this);
-                    player.getPlayer().sendMessage(getHitMessage(1, damage));
+                    @NotNull BrightDamage[] brightDamage = player.spellHit(entity, this);
+                    player.getPlayer().sendMessage(getHitMessage(1, brightDamage));
                 });
     }
 }
