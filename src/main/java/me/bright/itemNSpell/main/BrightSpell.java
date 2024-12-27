@@ -293,11 +293,29 @@ public abstract class BrightSpell implements Listener {
         Location clone = location.clone();
         Block block = clone.getBlock();
         int depth = 0;
-        while (depth < 10 && block.isPassable()) {
-            depth++;
-            clone.subtract(0, 1, 0);
-            block = clone.getBlock();
+        while (depth < 10) {
+            switch (block.getType()) {
+                case CREEPER_HEAD, CREEPER_WALL_HEAD, DRAGON_HEAD, DRAGON_WALL_HEAD,
+                     PIGLIN_HEAD, PIGLIN_WALL_HEAD, PLAYER_HEAD, PLAYER_WALL_HEAD,
+                     ZOMBIE_HEAD, ZOMBIE_WALL_HEAD, SKELETON_SKULL, SKELETON_WALL_SKULL,
+                     WITHER_SKELETON_SKULL, WITHER_SKELETON_WALL_SKULL,
+                     BLACK_CARPET, BLUE_CARPET, BROWN_CARPET, CYAN_CARPET, GRAY_CARPET, GREEN_CARPET,
+                     LIGHT_BLUE_CARPET, LIGHT_GRAY_CARPET, LIME_CARPET, MAGENTA_CARPET, MOSS_CARPET,
+                     ORANGE_CARPET, PINK_CARPET, PURPLE_CARPET, RED_CARPET, WHITE_CARPET, YELLOW_CARPET -> {
+                    depth++;
+                    clone.subtract(0, 1, 0);
+                    block = clone.getBlock();
+                    continue;
+                }
+            }
+
+            if (block.isPassable()) {
+                depth++;
+                clone.subtract(0, 1, 0);
+                block = clone.getBlock();
+            } else break;
         }
+
         if (block.isPassable()) return null;
         return clone;
     }
