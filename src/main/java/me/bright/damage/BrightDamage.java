@@ -1,7 +1,7 @@
 package me.bright.damage;
 
 import me.bright.brightrpg.BrightRPG;
-import me.bright.brightrpg.BrightStats;
+import me.bright.brightrpg.BrightStat;
 import me.bright.entity.BrightEntity;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
@@ -52,7 +52,7 @@ public record BrightDamage(@NotNull DamageType type, double amount, @Nullable Br
 
     public static BrightDamage calculateFlatDamage(BrightDamage brightDamage, BrightEntity target) {
         double currentHp = target.getCurrentHp(),
-                maxHp = target.getStatFromCache(BrightStats.MAX_HP),
+                maxHp = target.getStatFromCache(BrightStat.MAX_HP),
                 missingHp = maxHp - currentHp,
                 actualDamage = 0;
         switch (brightDamage.type) {
@@ -73,14 +73,14 @@ public record BrightDamage(@NotNull DamageType type, double amount, @Nullable Br
                 resistance = 0;
         switch (DamageType.compress(flatDamage.type)) {
             case PHYSICAL -> {
-                resistance = target.getStatFromCache(BrightStats.ARMOR);
-                flatPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStats.FLAT_ARMOR_PEN), 0);
-                percentPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStats.PERCENT_ARMOR_PEN), 0);
+                resistance = target.getStatFromCache(BrightStat.ARMOR);
+                flatPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStat.FLAT_ARMOR_PEN), 0);
+                percentPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStat.PERCENT_ARMOR_PEN), 0);
             }
             case MAGIC -> {
-                resistance = target.getStatFromCache(BrightStats.MAGIC_RESIST);
-                flatPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStats.FLAT_MAGIC_PEN), 0);
-                percentPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStats.PERCENT_MAGIC_PEN), 0);
+                resistance = target.getStatFromCache(BrightStat.MAGIC_RESIST);
+                flatPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStat.FLAT_MAGIC_PEN), 0);
+                percentPen = Math.max(flatDamage.dealer.getStatFromCache(BrightStat.PERCENT_MAGIC_PEN), 0);
             }
         }
         double actualResistance = resistance * (1 - percentPen / 100) - flatPen;

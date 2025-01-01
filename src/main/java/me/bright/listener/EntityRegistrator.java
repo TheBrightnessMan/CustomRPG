@@ -1,7 +1,7 @@
 package me.bright.listener;
 
 import me.bright.brightrpg.BrightRPG;
-import me.bright.brightrpg.BrightStats;
+import me.bright.brightrpg.BrightStat;
 import me.bright.entity.BrightEntity;
 import me.bright.entity.BrightPlayer;
 import me.bright.itemNSpell.main.BrightItem;
@@ -50,7 +50,7 @@ public class EntityRegistrator implements Listener {
     public void onRespawn(PlayerRespawnEvent event) {
         BrightPlayer player = BrightPlayer.fromBukkitPlayer(event.getPlayer());
         if (player == null) return;
-        player.setCurrentHp(player.getStatFromCache(BrightStats.MAX_HP));
+        player.setCurrentHp(player.getStatFromCache(BrightStat.MAX_HP));
     }
 
     @EventHandler

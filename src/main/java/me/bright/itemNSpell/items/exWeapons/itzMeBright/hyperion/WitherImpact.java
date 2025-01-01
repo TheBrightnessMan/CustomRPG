@@ -45,6 +45,6 @@ public class WitherImpact extends BrightSpell {
         }
         bukkitPlayer.teleport(destination.add(0, 1, 0), PlayerTeleportEvent.TeleportCause.PLUGIN);
         bukkitPlayer.playSound(bukkitPlayer, Sound.ENTITY_GENERIC_EXPLODE, 4.0F, 0.6F);
-        player.applyCondition(BrightConditions.WITHER_SHIELD, 5, false);
+        player.applyCondition(BrightConditions.WITHER_SHIELD, 5 * 20, false);
     }
 }

@@ -1,36 +1,25 @@
 package me.bright.conditions;
 
-import me.bright.brightrpg.BrightStats;
+import me.bright.brightrpg.BrightStatModifier;
 import me.bright.entity.BrightEntity;
 
-import java.util.HashMap;
-import java.util.Map;
+public abstract class BrightCondition extends BrightStatModifier {
 
-public abstract class BrightCondition {
-
-    private final Map<BrightStats, Double> statsMod = new HashMap<>();
     private final String key, displayName;
-    private boolean canStack = false;
+    private boolean canStack = false,
+            disableMelee = false,
+            disableBow = false,
+            disableMagic = false,
+            disableMovement = false;
 
     public BrightCondition(String key, String displayName) {
+        super(false);
         this.key = key;
         this.displayName = displayName;
     }
 
-    public void setStatModifier(BrightStats stat, double modifier) {
-        this.statsMod.put(stat, modifier);
-    }
-
-    public double getStatModifier(BrightStats stat) {
-        return this.statsMod.getOrDefault(stat, 0D);
-    }
-
-    public Map<BrightStats, Double> getStatsMod() {
-        return statsMod;
-    }
-
     public void onStart(BrightEntity affectedEntity) {
-
+        // No op
     }
 
     public void tick(BrightEntity affectedEntity) {
@@ -38,7 +27,7 @@ public abstract class BrightCondition {
     }
 
     public void onEnd(BrightEntity affectedEntity) {
-
+        // No op
     }
 
     public String getDisplayName() {
@@ -66,5 +55,37 @@ public abstract class BrightCondition {
     public boolean equals(Object obj) {
         if (!(obj instanceof BrightCondition other)) return false;
         return this.getKey().equals(other.getKey());
+    }
+
+    public boolean disablesMelee() {
+        return disableMelee;
+    }
+
+    protected void setDisablesMelee(boolean disableMelee) {
+        this.disableMelee = disableMelee;
+    }
+
+    public boolean disablesBow() {
+        return disableBow;
+    }
+
+    protected void setDisablesBow(boolean disableBow) {
+        this.disableBow = disableBow;
+    }
+
+    public boolean disablesMagic() {
+        return disableMagic;
+    }
+
+    protected void setDisablesMagic(boolean disableMagic) {
+        this.disableMagic = disableMagic;
+    }
+
+    public boolean disablesMovement() {
+        return disableMovement;
+    }
+
+    protected void setDisablesMovement(boolean disableMovement) {
+        this.disableMovement = disableMovement;
     }
 }

@@ -2,9 +2,12 @@ package me.bright.itemNSpell.main;
 
 import me.bright.brightrpg.BrightRPG;
 import me.bright.brightrpg.BrightStatModifier;
-import me.bright.brightrpg.BrightStats;
+import me.bright.brightrpg.BrightStat;
 import me.bright.damage.BrightDamage;
+import me.bright.enchant.BrightEnchant;
+import me.bright.enchant.BrightEnchants;
 import me.bright.entity.BrightEntity;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -20,21 +23,23 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class BrightItem extends BrightStatModifier {
 
-    private final BrightRPG plugin;
+    private static final BrightRPG plugin = BrightRPG.getPlugin();
+    private static final NamespacedKey KEY_NAMESPACE = new NamespacedKey(plugin, "KEY"),
+            ENCHANTS_NAMESPACE = new NamespacedKey(plugin, "ENCHANTS");
+    public static final String DEFAULT_KEY = "NULL";
 
     private final ItemStack itemStack;
     private final ItemMeta itemMeta;
     private final PersistentDataContainer nbt;
-
     private final String name;
-    public static final String KEY_ATTRIBUTE = "KEY", DEFAULT_KEY = "null";
     private Rarity rarity = Rarity.COMMON;
     private BrightSpell spell = null;
-    private double baseDamage = 0;
     private List<String> additionalModifierDescription = new ArrayList<>();
 
     protected BrightItem(@NotNull String key, @NotNull Material material, @NotNull String name) {
@@ -43,11 +48,10 @@ public abstract class BrightItem extends BrightStatModifier {
         this.itemMeta = itemStack.getItemMeta();
         assert itemMeta != null;
         this.nbt = itemMeta.getPersistentDataContainer();
-        this.plugin = BrightRPG.getPlugin();
         this.name = name;
         itemMeta.setDisplayName(name);
         itemStack.setItemMeta(itemMeta);
-        nbt.set(new NamespacedKey(plugin, KEY_ATTRIBUTE), PersistentDataType.STRING, key);
+        nbt.set(KEY_NAMESPACE, PersistentDataType.STRING, key);
     }
 
     public static @Nullable BrightItem fromItemStack(@Nullable ItemStack itemStack) {
@@ -56,27 +60,94 @@ public abstract class BrightItem extends BrightStatModifier {
 
         if (itemMeta == null) return null;
         PersistentDataContainer nbt = itemMeta.getPersistentDataContainer();
-        String givenKey = nbt.getOrDefault(new NamespacedKey(BrightRPG.getPlugin(), KEY_ATTRIBUTE),
+        String givenKey = nbt.getOrDefault(KEY_NAMESPACE,
                 PersistentDataType.STRING, DEFAULT_KEY);
 
-        return (givenKey.equals(DEFAULT_KEY)) ?
+        BrightItem item = (givenKey.equals(DEFAULT_KEY)) ?
                 BrightItems.getVanillaItem(itemStack) :
                 BrightItems.getCustomItem(givenKey);
+        if (item == null) {
+            return null;
+        }
+        var itemPdc = item.getItemMeta().getPersistentDataContainer();
+        itemMeta.getPersistentDataContainer().copyTo(itemPdc, true);
+        item.loadEnchantStats();
+        return item;
+    }
+
+    public void addEnchant(BrightEnchant enchant, int level) {
+        PersistentDataContainer enchants =
+                nbt.getOrDefault(ENCHANTS_NAMESPACE,
+                        PersistentDataType.TAG_CONTAINER,
+                        nbt.getAdapterContext().newPersistentDataContainer());
+        enchants.set(new NamespacedKey(plugin, enchant.getKey()), PersistentDataType.INTEGER, level);
+        nbt.set(ENCHANTS_NAMESPACE, PersistentDataType.TAG_CONTAINER, enchants);
+    }
+
+    public void removeEnchant(BrightEnchant enchant) {
+        PersistentDataContainer enchants = nbt.get(ENCHANTS_NAMESPACE, PersistentDataType.TAG_CONTAINER);
+        if (enchants == null) {
+            return;
+        }
+        enchants.remove(new NamespacedKey(plugin, enchant.getKey()));
+        nbt.set(ENCHANTS_NAMESPACE, PersistentDataType.TAG_CONTAINER, enchants);
+    }
+
+    public Long hasEnchant(BrightEnchant enchant) {
+        PersistentDataContainer enchants =
+                nbt.get(ENCHANTS_NAMESPACE, PersistentDataType.TAG_CONTAINER);
+        if (enchants == null) {
+            return null;
+        }
+        return enchants.get(new NamespacedKey(plugin, enchant.getKey()), PersistentDataType.LONG);
     }
 
     public String getName() {
         return name;
     }
 
-    protected void setBaseDamage(double baseDamage) {
-        this.baseDamage = baseDamage;
-    }
-
-    public double getBaseDamage() {
-        return this.baseDamage;
+    private void loadEnchantStats() {
+        PersistentDataContainer enchants =
+                nbt.get(ENCHANTS_NAMESPACE, PersistentDataType.TAG_CONTAINER);
+        if (enchants == null || enchants.isEmpty()) {
+            return;
+        }
+        BrightStatModifier mergedEnchants = new BrightStatModifier(false);
+        for (NamespacedKey enchantKey : enchants.getKeys()) {
+            BrightEnchant enchant = BrightEnchants.fromKey(enchantKey.getKey().toUpperCase());
+            if (enchant == null) {
+                continue;
+            }
+            int level = enchants.getOrDefault(enchantKey, PersistentDataType.INTEGER, 0);
+            BrightStatModifier enchantMod = enchant.getModifier(level);
+            for (BrightStat stat : BrightStat.values()) {
+                double newFlat = mergedEnchants.getStatFlatMod(stat) + enchantMod.getStatFlatMod(stat),
+                        newAdd = mergedEnchants.getStatAddMod(stat) + enchantMod.getStatAddMod(stat),
+                        newMul = (1 + mergedEnchants.getStatMulMod(stat) / 100) * (1 + enchantMod.getStatMulMod(stat) / 100);
+                newMul--;
+                newMul *= 100;
+                mergedEnchants.setStatFlatMod(stat, newFlat);
+                mergedEnchants.setStatAddMod(stat, newAdd);
+                mergedEnchants.setStatMulMod(stat, newMul);
+            }
+        }
+        for (BrightStat stat : BrightStat.values()) {
+            double finalValue = getStatFlatMod(stat) + mergedEnchants.getStatFlatMod(stat);
+            finalValue *= (1 + mergedEnchants.getStatAddMod(stat) / 100);
+            finalValue *= (1 + mergedEnchants.getStatMulMod(stat) / 100);
+            setStatFlatMod(stat, finalValue);
+        }
     }
 
     public @NotNull ItemStack buildItem() {
+        buildLore();
+        hideFlags();
+        itemMeta.setUnbreakable(true);
+        itemStack.setItemMeta(itemMeta);
+        return itemStack;
+    }
+
+    private void buildLore() {
         List<String> finalLore = buildStatsLore();
         if (!additionalModifierDescription.isEmpty()) {
             finalLore.add("");
@@ -92,37 +163,36 @@ public abstract class BrightItem extends BrightStatModifier {
         finalLore.add("");
         finalLore.add(rarity.displayName);
         itemMeta.setLore(finalLore);
-        itemMeta.setUnbreakable(true);
-        itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES);
-        if (itemMeta.getAttributeModifiers() != null && itemMeta.getAttributeModifiers().isEmpty())
-            itemMeta.addAttributeModifier(Attribute.GENERIC_LUCK, new AttributeModifier(
-                    new NamespacedKey(plugin, "dummy"),
-                    0,
-                    AttributeModifier.Operation.ADD_NUMBER,
-                    EquipmentSlotGroup.ANY
-            ));
-        itemStack.setItemMeta(itemMeta);
-        return itemStack;
     }
 
-    public @NotNull List<String> buildStatsLore() {
+    private @NotNull List<String> buildStatsLore() {
         final List<String> lore = new ArrayList<>();
-        if (baseDamage != 0) {
-            lore.add(ChatColor.GRAY + "Damage: " +
-                    ChatColor.DARK_RED + "+" + baseDamage);
-        }
 
-        for (BrightStats stat : BrightStats.values()) {
+        for (BrightStat stat : BrightStat.values()) {
             double value = getStatFlatMod(stat);
             if (value == 0) continue;
-            StringBuilder line = new StringBuilder().append(ChatColor.GRAY).append(stat.displayName).append(": ")
+            StringBuilder line = new StringBuilder()
+                    .append(ChatColor.GRAY).append(stat.displayName).append(": ")
                     .append(stat.color);
             if (value > 0)
                 line.append("+");
-            line.append(value);
+            line.append((long) value);
             lore.add(line.toString());
         }
         return lore;
+    }
+
+    private void hideFlags() {
+        itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
+        if (itemMeta.getAttributeModifiers() == null) {
+            return;
+        }
+        if (!itemMeta.getAttributeModifiers().isEmpty()) {
+            return;
+        }
+        var dummyAttributeModifier = new AttributeModifier(new NamespacedKey(plugin, "dummy"),
+                0, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
+        itemMeta.addAttributeModifier(Attribute.GENERIC_LUCK, dummyAttributeModifier);
     }
 
     protected void setSpell(@Nullable BrightSpell spell) {
@@ -130,7 +200,7 @@ public abstract class BrightItem extends BrightStatModifier {
     }
 
     public @NotNull String getKey() {
-        return nbt.getOrDefault(new NamespacedKey(plugin, KEY_ATTRIBUTE),
+        return nbt.getOrDefault(KEY_NAMESPACE,
                 PersistentDataType.STRING, "null");
     }
 

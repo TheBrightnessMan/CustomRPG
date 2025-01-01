@@ -7,6 +7,7 @@ import me.bright.entity.BrightPlayer;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -58,6 +59,10 @@ public abstract class BrightSpell implements Listener {
         if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
         if (onCooldown.contains(player)) {
             player.getPlayer().sendMessage(ChatColor.RED + "This spell is on cooldown!");
+            return;
+        }
+        if (player.magicDisabled()) {
+            player.getPlayer().sendMessage(ChatColor.RED + "Something is disrupting your magic!");
             return;
         }
 
@@ -236,8 +241,8 @@ public abstract class BrightSpell implements Listener {
         return description;
     }
 
-    protected void showRangeIndicator(BrightPlayer player) {
-        Location center = player.getPlayer().getLocation().clone().add(0, 3, 0);
+    protected void showRangeIndicator(@NotNull BrightPlayer player) {
+        Location center = player.getPlayer().getLocation().clone().add(0, 1, 0);
         final long tickRate = (long) (castTime * 20 / 6);
         if (tickRate < 1) return;
 
@@ -289,7 +294,7 @@ public abstract class BrightSpell implements Listener {
         }.runTaskTimer(BrightRPG.getPlugin(), 0L, tickRate);
     }
 
-    private Location getSolidBlockBelow(Location location) {
+    private @Nullable Location getSolidBlockBelow(@NotNull Location location) {
         Location clone = location.clone();
         Block block = clone.getBlock();
         int depth = 0;
@@ -299,21 +304,15 @@ public abstract class BrightSpell implements Listener {
                      PIGLIN_HEAD, PIGLIN_WALL_HEAD, PLAYER_HEAD, PLAYER_WALL_HEAD,
                      ZOMBIE_HEAD, ZOMBIE_WALL_HEAD, SKELETON_SKULL, SKELETON_WALL_SKULL,
                      WITHER_SKELETON_SKULL, WITHER_SKELETON_WALL_SKULL,
-                     BLACK_CARPET, BLUE_CARPET, BROWN_CARPET, CYAN_CARPET, GRAY_CARPET, GREEN_CARPET,
-                     LIGHT_BLUE_CARPET, LIGHT_GRAY_CARPET, LIME_CARPET, MAGENTA_CARPET, MOSS_CARPET,
-                     ORANGE_CARPET, PINK_CARPET, PURPLE_CARPET, RED_CARPET, WHITE_CARPET, YELLOW_CARPET -> {
+                     AIR, CAVE_AIR, VOID_AIR,
+                     WATER, LAVA -> {
                     depth++;
                     clone.subtract(0, 1, 0);
                     block = clone.getBlock();
                     continue;
                 }
             }
-
-            if (block.isPassable()) {
-                depth++;
-                clone.subtract(0, 1, 0);
-                block = clone.getBlock();
-            } else break;
+            break;
         }
 
         if (block.isPassable()) return null;

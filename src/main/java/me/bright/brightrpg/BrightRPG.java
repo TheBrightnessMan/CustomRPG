@@ -26,6 +26,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,14 +37,14 @@ public final class BrightRPG extends JavaPlugin {
     private static final List<BrightEntity> entities = new CopyOnWriteArrayList<>();
     private static final List<BrightPlayer> players = new CopyOnWriteArrayList<>();
     private BukkitTask updaterTask;
-    private final long regenPeriod = 2 * 20L;
+    public final long updateTickRate = 2L;
 
     @Override
     public void onEnable() {
         plugin = this;
         registerSpells();
         registerRecipes();
-        // registerLaunchPads();
+        registerLaunchPads();
         registerCommand("brightrpg", new BrightCommand());
         registerListeners(new EntityRegistrator(), new ItemConverter(), new DamageHandler());
 
@@ -53,7 +54,7 @@ public final class BrightRPG extends JavaPlugin {
 
             @Override
             public void run() {
-                if (tick % 2 == 0) {
+                if (tick % updateTickRate == 0) {
                     updateEntities(tick);
                 }
                 tick = (tick + period) % 1200L;
@@ -85,6 +86,7 @@ public final class BrightRPG extends JavaPlugin {
     private void updateEntities(long tick) {
         Iterator<BrightEntity> iterator = entities.iterator();
         iterator.forEachRemaining(entity -> {
+            entity.tickConditions();
             if (entity instanceof BrightPlayer player) {
                 updatePlayer(tick, player);
                 return;
@@ -104,14 +106,14 @@ public final class BrightRPG extends JavaPlugin {
                                 null, new ItemStack(Material.TORCH), null,
                                 null, new ItemStack(Material.STICK), null,
                         },
-                        BrightItems.FIREBOLT_WAND.buildItem()),
+                        Objects.requireNonNull(BrightItems.getCustomItem("FIREBOLT_WAND")).buildItem()),
                 new CustomRecipeListener(
                         new ItemStack[]{
                                 null, new ItemStack(Material.BLAZE_POWDER), null,
                                 null, new ItemStack(Material.FIRE_CHARGE), null,
                                 null, new ItemStack(Material.BLAZE_ROD), null,
                         },
-                        BrightItems.FIREBALL_WAND.buildItem())
+                        Objects.requireNonNull(BrightItems.getCustomItem("FIREBALL_WAND")).buildItem())
         );
     }
 

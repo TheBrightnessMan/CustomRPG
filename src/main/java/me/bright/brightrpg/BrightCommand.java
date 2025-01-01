@@ -17,11 +17,15 @@ public class BrightCommand implements CommandExecutor {
         if (!command.getName().equalsIgnoreCase("brightRPG")) return true;
         if (!sender.hasPermission("brightrpg.all")) return true;
 
-        BrightItem[] customItems = BrightItems.items;
+        var customItems = BrightItems.keyItemEntries;
         Inventory inventory = Bukkit.createInventory(null,
-                roundUp(customItems.length, 9), "Custom Items");
-        for (BrightItem brightItem : customItems) {
-            inventory.addItem(brightItem.buildItem());
+                roundUp(customItems.size(), 9), "Custom Items");
+        for (var key : customItems.keySet()) {
+            BrightItem item = BrightItems.getCustomItem(key);
+            if (item == null) {
+                continue;
+            }
+            inventory.addItem(item.buildItem());
         }
         sender.openInventory(inventory);
         return true;

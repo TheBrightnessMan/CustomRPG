@@ -1,7 +1,7 @@
 package me.bright.entity;
 
 import me.bright.brightrpg.BrightRPG;
-import me.bright.brightrpg.BrightStats;
+import me.bright.brightrpg.BrightStat;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -27,14 +27,14 @@ public class BrightPlayer extends BrightEntity {
 
     public void naturalHpRegenTick() {
         double currentHp = getCurrentHp(),
-                maxHp = getStatFromCache(BrightStats.MAX_HP);
+                maxHp = getStatFromCache(BrightStat.MAX_HP);
         if (currentHp == maxHp) return;
         healSelf(maxHp / 100);
     }
 
     public void naturalManaRegenTick() {
         double currentMana = getCurrentMana(),
-                maxMana = getStatFromCache(BrightStats.INTELLIGENCE);
+                maxMana = getStatFromCache(BrightStat.INTELLIGENCE);
         if (currentMana == maxMana) return;
         setCurrentMana(currentMana + maxMana * 2 / 100);
     }
@@ -42,28 +42,29 @@ public class BrightPlayer extends BrightEntity {
     public void sendActionBar() {
         long tempHp = (long) getTempHp(),
                 currentHp = (long) getCurrentHp(),
-                maxHp = (long) getStatFromCache(BrightStats.MAX_HP),
-                armor = (long) getStatFromCache(BrightStats.ARMOR),
-                magicResist = (long) getStatFromCache(BrightStats.MAGIC_RESIST),
+                maxHp = (long) getStatFromCache(BrightStat.MAX_HP),
+                armor = (long) getStatFromCache(BrightStat.ARMOR),
+                magicResist = (long) getStatFromCache(BrightStat.MAGIC_RESIST),
                 currentMana = (long) getCurrentMana(),
-                maxMana = (long) getStatFromCache(BrightStats.INTELLIGENCE);
-        StringBuilder hpDisplay = new StringBuilder();
-        if (tempHp > 0)
-            hpDisplay.append(BrightStats.TEMP_HP.color).append(tempHp + currentHp);
-        else
-            hpDisplay.append(BrightStats.CURRENT_HP.color).append(currentHp);
-        hpDisplay.append(ChatColor.GRAY).append("/")
-                .append(BrightStats.MAX_HP.color).append(maxHp).
-                append(ChatColor.RED).append("♥");
-        BaseComponent message = TextComponent.fromLegacy(hpDisplay.toString() +
-                ChatColor.RESET + "       " +
-                BrightStats.ARMOR.color + armor +
-                ChatColor.GRAY + "/" +
-                BrightStats.MAGIC_RESIST.color + magicResist +
-                ChatColor.RESET + "       " +
-                BrightStats.CURRENT_MANA.color + currentMana +
-                ChatColor.GRAY + "/" +
-                BrightStats.INTELLIGENCE.color + maxMana + "✎");
+                maxMana = (long) getStatFromCache(BrightStat.INTELLIGENCE);
+        StringBuilder actionBar = new StringBuilder();
+        if (tempHp > 0) {
+            actionBar.append(BrightStat.TEMP_HP.color).append(tempHp + currentHp);
+        } else {
+            actionBar.append(BrightStat.CURRENT_HP.color).append(currentHp);
+        }
+        actionBar.append(ChatColor.GRAY).append("/")
+                .append(BrightStat.MAX_HP.color).append(maxHp)
+                .append(ChatColor.RED).append(BrightStat.MAX_HP.displayIcon)
+                .append(ChatColor.RESET).append("       ")
+                .append(BrightStat.ARMOR.color).append(armor)
+                .append(ChatColor.GRAY).append("/")
+                .append(BrightStat.MAGIC_RESIST.color).append(magicResist)
+                .append(ChatColor.RESET).append("       ")
+                .append(BrightStat.CURRENT_MANA.color).append(currentMana)
+                .append(ChatColor.GRAY).append("/")
+                .append(BrightStat.INTELLIGENCE.color).append(maxMana).append("✎");
+        BaseComponent message = TextComponent.fromLegacy(actionBar.toString());
         player.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, message);
     }
 

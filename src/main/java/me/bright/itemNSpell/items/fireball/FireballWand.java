@@ -1,6 +1,6 @@
 package me.bright.itemNSpell.items.fireball;
 
-import me.bright.brightrpg.BrightStats;
+import me.bright.brightrpg.BrightStat;
 import me.bright.itemNSpell.main.BrightItem;
 import me.bright.itemNSpell.main.BrightSpells;
 import org.bukkit.ChatColor;
@@ -12,6 +12,6 @@ public class FireballWand extends BrightItem {
         super("FIREBALL_WAND", Material.BLAZE_ROD, ChatColor.GOLD + "Fireball Wand");
         setRarity(Rarity.UNCOMMON);
         setSpell(BrightSpells.FIREBALL);
-        setStatFlatMod(BrightStats.INTELLIGENCE, 50);
+        setStatFlatMod(BrightStat.INTELLIGENCE, 50);
     }
 }

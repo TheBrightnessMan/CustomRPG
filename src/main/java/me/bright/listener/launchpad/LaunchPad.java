@@ -1,10 +1,14 @@
 package me.bright.listener.launchpad;
 
 import me.bright.brightrpg.BrightRPG;
+import me.bright.entity.BrightArmorStand;
+import net.minecraft.world.phys.Vec3;
 import org.apache.commons.math3.linear.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_21_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_21_R1.util.CraftVector;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,37 +30,6 @@ public class LaunchPad implements Listener {
     private final double multiplier;
 
     private final double xa, xb, ya, yb, yc, za, zb;
-
-    public LaunchPad(BoundingBox activeRegion, Location from, Location mid, Location to, double multiplier) {
-        this.activeRegion = activeRegion;
-        this.from = from;
-        this.mid = mid;
-        this.to = to;
-        this.multiplier = multiplier;
-        this.plugin = BrightRPG.getPlugin();
-
-        // Line going through (0, x1), (T, x2)
-        // 0a + b = x1  =>  b = x1
-        // Ta + b = x2  =>  Ta + x1 = x2  =>  a = (x2 - x1) / T
-        double x1 = from.getX();
-        double x2 = to.getX();
-        this.xb = x1;
-        this.xa = (x2 - x1) / travelSeconds;
-
-        // Quadratic going through (0, y1), (T/2, y2), (T, y3)
-        RealVector solution = getYCoeff();
-        this.ya = solution.getEntry(0);
-        this.yb = solution.getEntry(1);
-        this.yc = solution.getEntry(2);
-
-        // Line going through (0, z1), (T, z2)
-        // 0a + b = z1  =>  b = z1
-        // Ta + b = z2  =>  Ta + z1 = z2  =>  a = (z2 - z1) / T
-        double z1 = from.getZ();
-        double z2 = to.getZ();
-        this.zb = z1;
-        this.za = (z2 - z1) / travelSeconds;
-    }
 
     public LaunchPad(BoundingBox activeRegion, Location from, Location mid, Location to) {
         this.activeRegion = activeRegion;
@@ -97,29 +70,27 @@ public class LaunchPad implements Listener {
         if (!activeRegion.overlaps(player.getBoundingBox())) return;
         if (player.getVehicle() != null) return;
 
-        world.spawn(from, ArmorStand.class, CreatureSpawnEvent.SpawnReason.CUSTOM, false, armorStand -> {
-            armorStand.setVisible(false);
-            armorStand.setSmall(true);
-            armorStand.addPassenger(player);
-            player.setInvulnerable(true);
-            new BukkitRunnable() {
-                double t = 0;
+        BrightArmorStand nmsArmorStand = new BrightArmorStand(from);
+        ArmorStand bukkitArmorStand = nmsArmorStand.getBukkitArmorStand();
+        bukkitArmorStand.addPassenger(player);
+        player.setInvulnerable(true);
 
-                @Override
-                public void run() {
-                    if (t > travelSeconds) {
-                        cancel();
-                        armorStand.remove();
-                        player.setInvulnerable(false);
-                        player.teleport(to);
-                        return;
-                    }
-                    Vector velocity = new Vector(vx(t), vy(t), vz(t)).normalize().multiply(multiplier);
-                    armorStand.setVelocity(velocity);
-                    t += (double) updateRate / 20;
+        new BukkitRunnable() {
+            double t = 0;
+
+            @Override
+            public void run() {
+                if (t > travelSeconds) {
+                    cancel();
+                    bukkitArmorStand.remove();
+                    player.setInvulnerable(false);
+                    player.teleport(to);
+                    return;
                 }
-            }.runTaskTimer(plugin, 0L, updateRate);
-        });
+                nmsArmorStand.setPos(x(t), y(t), z(t));
+                t += (double) updateRate / 20;
+            }
+        }.runTaskTimer(plugin, 0L, updateRate);
     }
 
     private double x(double t) {
@@ -134,17 +105,17 @@ public class LaunchPad implements Listener {
         return za * t + zb;
     }
 
-    private double vx(double t) {
-        return xa;
-    }
-
-    private double vy(double t) {
-        return 2 * ya * t + yb;
-    }
-
-    private double vz(double t) {
-        return za;
-    }
+//    private double vx(double t) {
+//        return xa;
+//    }
+//
+//    private double vy(double t) {
+//        return 2 * ya * t + yb;
+//    }
+//
+//    private double vz(double t) {
+//        return za;
+//    }
 
     private RealVector getYCoeff() {
         double[][] matrixT = {

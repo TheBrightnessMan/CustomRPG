@@ -1,11 +1,13 @@
 package me.bright.brightrpg;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class BrightStatModifier {
+public class BrightStatModifier {
 
-    private final Map<BrightStats, Double>
+    private final Map<BrightStat, Double>
             flatMod = new ConcurrentHashMap<>(),
             addMod = new ConcurrentHashMap<>(),
             mulMod = new ConcurrentHashMap<>();
@@ -16,7 +18,7 @@ public abstract class BrightStatModifier {
     }
 
     private void initMapEntity() {
-        for (BrightStats stat : BrightStats.values()) {
+        for (BrightStat stat : BrightStat.values()) {
             flatMod.put(stat, stat.entityBaseValue);
             addMod.put(stat, 100D);
             mulMod.put(stat, 100D);
@@ -24,46 +26,47 @@ public abstract class BrightStatModifier {
     }
 
     private void initMapOther() {
-        for (BrightStats stat : BrightStats.values()) {
-            flatMod.put(stat, stat.otherBaseValue);
+        for (BrightStat stat : BrightStat.values()) {
+            flatMod.put(stat, 0D);
             addMod.put(stat, 0D);
             mulMod.put(stat, 0D);
         }
     }
 
-    public Map<BrightStats, Double> getAllFlatMod() {
+    public Map<BrightStat, Double> getAllFlatMod() {
         return flatMod;
     }
 
-    public Map<BrightStats, Double> getAllAddMod() {
+    public Map<BrightStat, Double> getAllAddMod() {
         return addMod;
     }
 
-    public Map<BrightStats, Double> getAllMulMod() {
+    public Map<BrightStat, Double> getAllMulMod() {
         return mulMod;
     }
 
-    public double getStatFlatMod(BrightStats stat) {
+    public double getStatFlatMod(BrightStat stat) {
         return flatMod.get(stat);
     }
 
-    public double getStatAddMod(BrightStats stat) {
+    public double getStatAddMod(BrightStat stat) {
         return addMod.get(stat);
     }
 
-    public double getStatMulMod(BrightStats stat) {
+    public double getStatMulMod(BrightStat stat) {
         return mulMod.get(stat);
     }
 
-    public void setStatFlatMod(BrightStats stat, double val) {
+    public void setStatFlatMod(BrightStat stat, double val) {
         flatMod.put(stat, val);
     }
 
-    public void setStatAddMod(BrightStats stat, double val) {
-        addMod.put(stat, val);
+    public void setStatAddMod(BrightStat stat, double val) {
+        addMod.put(stat, Math.max(-100D, val));
     }
 
-    public void setStatMulMod(BrightStats stat, double val) {
-        mulMod.put(stat, val);
+    public void setStatMulMod(BrightStat stat, double val) {
+        mulMod.put(stat, Math.max(-100D, val));
     }
+
 }

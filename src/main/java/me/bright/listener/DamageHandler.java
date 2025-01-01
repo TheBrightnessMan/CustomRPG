@@ -13,8 +13,6 @@ public class DamageHandler implements Listener {
 
     @EventHandler
     public void onEntityHit(EntityDamageEvent event) {
-        event.setDamage(0.01);
-
         Entity damagerEntity = event.getDamageSource().getCausingEntity();
         Entity targetEntity = event.getEntity();
 
@@ -23,20 +21,21 @@ public class DamageHandler implements Listener {
         if (targetEntity.getType() == EntityType.ARMOR_STAND) return; // Ignore armor stands
 
         BrightEntity attacker = BrightEntity.fromLivingEntity((LivingEntity) damagerEntity);
+        if (attacker.meleeDisabled()) {
+            return;
+        }
         BrightEntity target = BrightEntity.fromLivingEntity((LivingEntity) targetEntity);
         BrightDamage[] damages = BrightDamage.emptyFinalised;
 
-
         switch (event.getCause()) {
-            case ENTITY_ATTACK, ENTITY_SWEEP_ATTACK ->
-                    damages = attacker.meleeHit(target);
+            case ENTITY_ATTACK, ENTITY_SWEEP_ATTACK -> damages = attacker.meleeHit(target);
             case PROJECTILE -> {
                 if (event.getDamageSource().getDirectEntity().getType() == EntityType.ARROW) {
                     damages = attacker.meleeHit(target);
                 }
             }
         }
-
+        event.setDamage(0.01);
         BrightDamage.showDamages(target.getLivingEntity(), damages);
     }
 }

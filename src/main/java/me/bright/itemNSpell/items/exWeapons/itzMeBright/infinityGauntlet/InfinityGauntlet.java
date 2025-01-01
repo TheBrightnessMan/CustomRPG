@@ -1,6 +1,6 @@
 package me.bright.itemNSpell.items.exWeapons.itzMeBright.infinityGauntlet;
 
-import me.bright.brightrpg.BrightStats;
+import me.bright.brightrpg.BrightStat;
 import me.bright.damage.BrightDamage;
 import me.bright.damage.DamageType;
 import me.bright.entity.BrightEntity;
@@ -21,7 +21,7 @@ public class InfinityGauntlet extends BrightItem {
         super("INFINITY_GAUNTLET", Material.EMERALD,
                 "" + ChatColor.GOLD + ChatColor.BOLD + "Infinity Gauntlet");
         setRarity(Rarity.DIVINE);
-        setStatFlatMod(BrightStats.DAMAGE_TAKEN, -100);
+        setStatFlatMod(BrightStat.DAMAGE_TAKEN, -100);
         setAdditionalModifierDescription(
                 Arrays.asList(
                         ChatColor.GOLD + "Passive: " +
@@ -30,9 +30,9 @@ public class InfinityGauntlet extends BrightItem {
                         additionalDamage.toString() + ChatColor.GRAY + " damage"
                 )
         );
+        getItemMeta().setFireResistant(true);
         setSpell(BrightSpells.MASS_DISINTEGRATION);
-        // "INFINITY_GAUNTLET".hashCode() = 873639121
-        setCustomModelData(873639121);
+        setCustomModelData(getKey().hashCode()); // = 873639121
     }
 
     @Override
