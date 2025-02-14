@@ -1,7 +1,5 @@
 package me.bright.brightrpg;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

@@ -1,13 +1,12 @@
 package me.bright.itemNSpell.main;
 
 import me.bright.brightrpg.BrightRPG;
-import me.bright.brightrpg.BrightStatModifier;
 import me.bright.brightrpg.BrightStat;
+import me.bright.brightrpg.BrightStatModifier;
 import me.bright.damage.BrightDamage;
 import me.bright.enchant.BrightEnchant;
 import me.bright.enchant.BrightEnchants;
 import me.bright.entity.BrightEntity;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -23,9 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public abstract class BrightItem extends BrightStatModifier {
 
@@ -155,14 +152,20 @@ public abstract class BrightItem extends BrightStatModifier {
         }
         if (spell != null) {
             finalLore.add("");
-            finalLore.add(ChatColor.YELLOW + "Spell: " + spell.getDisplayName() + " " +
-                    ChatColor.GOLD + ChatColor.BOLD + "RIGHT CLICK");
-            finalLore.addAll(spell.getDescription());
-            finalLore.addAll(spell.buildAttributes());
+            finalLore.addAll(buildSpellLore());
         }
         finalLore.add("");
         finalLore.add(rarity.displayName);
         itemMeta.setLore(finalLore);
+    }
+
+    private @NotNull List<String> buildSpellLore() {
+        final List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.YELLOW + "Spell: " + spell.getDisplayName() + " " +
+                ChatColor.GOLD + ChatColor.BOLD + "RIGHT CLICK");
+        lore.addAll(spell.getDescription());
+        lore.addAll(spell.buildAttributes());
+        return lore;
     }
 
     private @NotNull List<String> buildStatsLore() {

@@ -2,22 +2,17 @@ package me.bright.listener.launchpad;
 
 import me.bright.brightrpg.BrightRPG;
 import me.bright.entity.BrightArmorStand;
-import net.minecraft.world.phys.Vec3;
 import org.apache.commons.math3.linear.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R1.util.CraftVector;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BoundingBox;
-import org.bukkit.util.Vector;
 
 public class LaunchPad implements Listener {
 

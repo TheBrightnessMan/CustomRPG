@@ -157,9 +157,10 @@ public record BrightDamage(@NotNull DamageType type, double amount, @Nullable Br
     public static void showDamage(@NotNull LivingEntity target,
                                   @NotNull BrightDamage brightDamage) {
         World world = target.getWorld();
+        long damage = (long) brightDamage.amount();
         final String displayDamage = (brightDamage.critical()) ?
-                "" + brightDamage.type().color + ChatColor.BOLD + "!  " + brightDamage.amount() + "  !" :
-                "" + brightDamage.type().color + brightDamage.amount();
+                "" + brightDamage.type().color + ChatColor.BOLD + "!  " + damage + "  !" :
+                "" + brightDamage.type().color + damage;
         Location location = target.getLocation().clone()
                 .add(new Random().nextDouble() * 2 - 1,
                         1,

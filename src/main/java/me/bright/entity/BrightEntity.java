@@ -1,8 +1,8 @@
 package me.bright.entity;
 
 import me.bright.brightrpg.BrightRPG;
-import me.bright.brightrpg.BrightStatModifier;
 import me.bright.brightrpg.BrightStat;
+import me.bright.brightrpg.BrightStatModifier;
 import me.bright.conditions.BrightCondition;
 import me.bright.damage.BrightDamage;
 import me.bright.damage.DamageType;
@@ -10,7 +10,6 @@ import me.bright.itemNSpell.main.BrightItem;
 import me.bright.itemNSpell.main.BrightSpell;
 import me.bright.utils.BrightNumberUtils;
 import me.bright.utils.BrightStringUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
